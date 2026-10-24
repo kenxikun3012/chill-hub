@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chill Hub Wireframes</title>
+<style>
+  :root {
+    --ink: #1f1f1f; --muted: #6f6f6f; --faint: #9a9a9a;
+    --line: #cfcfcf; --fill: #e9e9e9; --fill2: #f4f4f4; --bg: #fafafa; --white: #ffffff;
+    --accent: #4f46e5; --accent-soft: #e8e7fd; --warn: #b45309; --warn-soft: #fdf1e3;
+    --ok: #2f7d4f; --ok-soft: #e4f3ea; --bad: #b42318; --bad-soft: #fdecea;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #ececec; }
+  button { font: inherit; }
+
+  /* ---------- prototype shell ---------- */
+  .shell { display: grid; grid-template-columns: 250px 1fr 300px; height: 100vh; }
+  .side, .notes { background: var(--white); overflow-y: auto; padding: 16px; border-right: 1px solid var(--line); }
+  .notes { border-right: 0; border-left: 1px solid var(--line); }
+  .side h1 { font-size: 16px; margin: 0 0 2px; }
+  .side .ver { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+  .side h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 6px; }
+  .side a { display: block; padding: 5px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 13px; }
+  .side a:hover { background: var(--fill2); }
+  .side a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .side a.todo { color: var(--faint); pointer-events: none; }
+  .side a.todo::after { content: " · next batch"; font-size: 11px; }
+  .stage { overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 28px 16px; }
+  .notes h3 { margin: 0 0 4px; font-size: 16px; }
+  .notes .spec { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .notes p, .notes li { font-size: 13px; }
+  .notes ul { padding-left: 18px; }
+  .notes .q { background: var(--warn-soft); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+  .notes .q b { display: block; margin-bottom: 4px; color: var(--warn); }
+  .mobile-pick { display: none; }
+
+  /* ---------- phone frame ---------- */
+  .phone { width: 375px; height: 780px; background: var(--white); border: 10px solid #2b2b2b; border-radius: 38px; overflow: hidden;
+           display: flex; flex-direction: column; position: relative; flex-shrink: 0; }
+  .status { height: 30px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: 12px; font-weight: 600; }
+  .screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: var(--bg); }
+  .screen::-webkit-scrollbar { width: 0; }
+
+  /* ---------- wireframe components ---------- */
+  .top { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--white); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+  .top .title { font-weight: 700; font-size: 17px; flex: 1; }
+  .icon-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; cursor: pointer; position: relative; flex-shrink: 0; }
+  .icon-btn .dot { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 10px; display: grid; place-items: center; padding: 0 4px; }
+  svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .body { padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .center { align-items: center; text-align: center; justify-content: center; }
+  h2.h { font-size: 20px; margin: 0; }
+  h3.sec { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 6px 0 -4px; display: flex; justify-content: space-between; align-items: baseline; }
+  h3.sec a { text-transform: none; letter-spacing: 0; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .sub { color: var(--muted); margin: 0; }
+  .ph { background: var(--fill); border: 1px dashed var(--faint); border-radius: var(--radius); display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--white); font-weight: 600; cursor: pointer; width: 100%; color: var(--ink); text-decoration: none; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--accent); }
+  .btn.sm { height: 34px; width: auto; padding: 0 14px; font-size: 13px; }
+  .field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .input { height: 44px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 0 12px; display: flex; align-items: center; color: var(--faint); gap: 8px; }
+  .input.filled { color: var(--ink); }
+  .hint { font-size: 12px; color: var(--muted); }
+  .hint.err { color: var(--bad); }
+  .steps { display: flex; gap: 6px; }
+  .steps span { flex: 1; height: 4px; border-radius: 2px; background: var(--fill); }
+  .steps span.on { background: var(--accent); }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row.between { justify-content: space-between; }
+  .grow { flex: 1; min-width: 0; }
+  .game { width: 38px; height: 38px; border-radius: 8px; background: var(--fill); border: 1px solid var(--line); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+  .strong { font-weight: 700; }
+  .small { font-size: 12px; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 12px; background: var(--fill2); border: 1px solid var(--line); font-size: 12px; white-space: nowrap; }
+  .chip.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  .chip.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+  .chip.ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .slots { display: flex; gap: 3px; align-items: center; }
+  .slots i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); display: block; }
+  .slots i.e { background: transparent; border: 1.5px solid var(--faint); }
+  .avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--fill); border: 1px solid var(--line); flex-shrink: 0; }
+  .avatar.lg { width: 64px; height: 64px; }
+  .hscroll { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; }
+  .hscroll::-webkit-scrollbar { height: 0; }
+  .hscroll .card { min-width: 250px; }
+  .code { font-family: ui-monospace, Consolas, monospace; background: var(--fill2); border: 1px dashed var(--faint); border-radius: 6px; padding: 2px 8px; font-weight: 700; letter-spacing: .05em; }
+  .list-item { display: flex; gap: 10px; align-items: center; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; cursor: pointer; }
+  .thumb { width: 54px; height: 54px; border-radius: 8px; flex-shrink: 0; }
+  .otp { display: flex; gap: 8px; justify-content: center; }
+  .otp span { width: 42px; height: 50px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); display: grid; place-items: center; font-size: 20px; font-weight: 700; }
+  .otp span.cur { border: 2px solid var(--accent); }
+  .banner { border-radius: var(--radius); padding: 10px 12px; font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+  .banner.info { background: var(--fill2); border: 1px solid var(--line); }
+  .banner.warn { background: var(--warn-soft); color: var(--warn); }
+  .banner.bad { background: var(--bad-soft); color: var(--bad); }
+  .timeline { display: flex; flex-direction: column; gap: 0; text-align: left; width: 100%; }
+  .timeline div { display: flex; gap: 10px; align-items: flex-start; padding-bottom: 14px; position: relative; }
+  .timeline div::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--line); }
+  .timeline div:last-child::before { display: none; }
+  .timeline b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; flex-shrink: 0; background: var(--fill); border: 1px solid var(--line); }
+  .timeline b.done { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .timeline b.now { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; text-align: left; }
+  .box { width: 18px; height: 18px; border: 1.5px solid var(--muted); border-radius: 4px; flex-shrink: 0; margin-top: 1px; }
+  .box.on { background: var(--accent); border-color: var(--accent); }
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 12px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .demo { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; color: var(--faint); text-align: center; }
+  .demo a { color: var(--accent); cursor: pointer; }
+  .link { color: var(--accent); font-weight: 600; cursor: pointer; }
+  .spacer { flex: 1; }
+
+  /* batch 2: lobbies */
+  .seg { display: flex; background: var(--fill2); border: 1px solid var(--line); border-radius: var(--radius); padding: 3px; gap: 3px; }
+  .seg span { flex: 1; text-align: center; padding: 7px 4px; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--muted); }
+  .seg span.on { background: var(--white); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .chip[data-toggle] { cursor: pointer; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .choice { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 12px; display: flex; gap: 10px; cursor: pointer; text-align: left; }
+  .choice.on { border-color: var(--accent); background: var(--accent-soft); }
+  .choice .radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); flex-shrink: 0; margin-top: 2px; }
+  .choice.on .radio { border: 5px solid var(--accent); }
+  .tile { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; text-align: center; }
+  .tile.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .switch { width: 42px; height: 24px; border-radius: 12px; background: var(--line); position: relative; cursor: pointer; flex-shrink: 0; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .switch.on { background: var(--accent); }
+  .switch.on::after { left: 21px; }
+  .stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); height: 44px; }
+  .stepper b { width: 44px; text-align: center; font-size: 18px; color: var(--accent); cursor: pointer; }
+  .stepper span { flex: 1; text-align: center; font-weight: 700; }
+  .setting { display: flex; align-items: center; gap: 10px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+  .codebar { display: flex; align-items: center; gap: 10px; background: var(--accent-soft); border-radius: var(--radius); padding: 10px 12px; }
+  .codebar .code { font-size: 18px; background: var(--white); }
+  .codebar.hidden { background: var(--fill2); border: 1px dashed var(--faint); color: var(--muted); }
+  .ptabs { display: flex; background: var(--white); border-bottom: 1px solid var(--line); }
+  .ptabs a { flex: 1; text-align: center; padding: 11px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+  .ptabs a.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .member { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--fill); }
+  .member:last-child { border-bottom: 0; }
+  .member .avatar { width: 32px; height: 32px; }
+  .member.empty .avatar { background: transparent; border: 1.5px dashed var(--faint); }
+  .msg { max-width: 78%; padding: 8px 11px; border-radius: 14px; background: var(--white); border: 1px solid var(--line); font-size: 13px; }
+  .msg.me { align-self: flex-end; background: var(--accent); border-color: var(--accent); color: #fff; }
+  .msg .who { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+  .sysmsg { align-self: center; font-size: 11px; color: var(--muted); background: var(--fill2); border-radius: 10px; padding: 3px 10px; }
+  .composer { display: flex; gap: 8px; padding: 10px 12px; background: var(--white); border-top: 1px solid var(--line); position: sticky; bottom: 0; }
+  .composer .input { flex: 1; height: 40px; border-radius: 20px; }
+  .composer .send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; }
+  .rate-row { display: flex; align-items: center; gap: 10px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+  .rate-row .opt { display: flex; gap: 6px; }
+  .rate-row .opt span { height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid var(--line); display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+  .rate-row .opt span.on.good { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+  .rate-row .opt span.on.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); font-weight: 600; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 13px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; font-weight: 600; }
+  .searchbar { display: flex; gap: 8px; }
+  .searchbar .input { flex: 1; }
+
+  /* batch 5: admin panel (desktop frame) */
+  .phone.desktop { width: 100%; max-width: 1180px; min-width: 940px; height: 760px; border: 1px solid #b9b9b9; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.12); }
+  .phone.desktop .status { background: #e4e4e4; height: 38px; justify-content: flex-start; gap: 12px; padding: 0 14px; font-weight: 400; }
+  .phone.desktop .status .url { flex: 1; max-width: 520px; height: 24px; border-radius: 12px; background: #fff; display: flex; align-items: center; padding: 0 12px; color: var(--muted); font-size: 12px; }
+  .admin { display: grid; grid-template-columns: 210px 1fr; flex: 1; min-height: 100%; }
+  .anav { background: var(--white); border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .anav .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; padding: 4px 8px 14px; }
+  .anav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--ink); cursor: pointer; font-size: 13px; }
+  .anav a:hover { background: var(--fill2); }
+  .anav a.on { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .anav a .chip { margin-left: auto; height: 20px; padding: 0 7px; }
+  .anav a.off { color: var(--faint); pointer-events: none; }
+  .anav .who { margin-top: auto; border-top: 1px solid var(--line); padding: 10px 8px 0; font-size: 12px; color: var(--muted); }
+  .amain { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+  .amain h2 { margin: 0; font-size: 20px; }
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .stat { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+  .stat b { display: block; font-size: 24px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .split { display: grid; grid-template-columns: 330px 1fr; gap: 16px; align-items: start; }
+  .panel { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .panel h4 { margin: 0; font-size: 14px; }
+  table.t { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 13px; }
+  table.t th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--fill2); padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  table.t td { padding: 9px 12px; border-bottom: 1px solid var(--fill); vertical-align: middle; }
+  table.t tr.sel td { background: var(--accent-soft); }
+  table.t tr:last-child td { border-bottom: 0; }
+  .qitem { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); cursor: pointer; }
+  .qitem.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .toolbar { display: flex; gap: 10px; align-items: center; }
+  .toolbar .input { height: 36px; }
+
+  /* bottom tab bar */
+  .tabs { display: flex; border-top: 1px solid var(--line); background: var(--white); height: 62px; flex-shrink: 0; align-items: center; }
+  .tabs a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); cursor: pointer; text-decoration: none; }
+  .tabs a.on { color: var(--accent); font-weight: 700; }
+  .tabs a.fab span { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; margin-top: -18px; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+
+  @media (max-width: 1000px) {
+    .shell { grid-template-columns: 1fr; height: auto; }
+    .side, .notes { display: none; }
+    .mobile-pick { display: block; position: sticky; top: 0; z-index: 5; background: var(--white); padding: 10px 16px; border-bottom: 1px solid var(--line); }
+    .mobile-pick select { width: 100%; height: 38px; font: inherit; }
+    .stage { padding: 16px; }
+  }
+  @media (max-width: 420px) {
+    .phone { width: 100%; border-width: 0; border-radius: 0; height: calc(100vh - 58px); }
+  }
+</style>
+</head>
+<body>
+<div class="mobile-pick"><select id="pick" aria-label="Screen"></select></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <h1>Chill Hub wireframes</h1>
+    <div class="ver">v0.1 · mid-fidelity · mobile first</div>
+  </nav>
+  <main class="stage">
+    <div class="phone">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="screen" id="screen"></div>
+    </div>
+  </main>
+  <aside class="notes" id="notes"></aside>
+</div>
+
+<!-- ===================== ICONS ===================== -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4a4 4 0 010 8M22 21c0-3-2-5-4-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 013 3v13a2 2 0 00-2-2H4z"/><path d="M20 4h-6a3 3 0 00-3 3"/><path d="M20 4v14h-7"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 10v11H3V10zM7 10l5-8c2 0 3 1 3 3v4h5a2 2 0 012 2l-2 8a2 2 0 01-2 2H7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18M6 12h12M10 19h4"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4M4 4h13l-2 4 2 4H4"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+  <symbol id="i-paste" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V2h6v2"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+</svg>
+
+<!-- ===================== SCREENS ===================== -->
+<!-- Each template: data-group, data-title, data-spec. The <div class="note"> inside is moved to the notes panel. -->
+
+<template id="welcome" data-group="1. Sign-up & login" data-title="Welcome" data-spec="Entry point">
+  <div class="body center">
+    <div class="spacer"></div>
+    <div class="ph" style="width:96px;height:96px;border-radius:24px">Logo</div>
+    <h2 class="h">Chill Hub</h2>
+    <p class="sub">Find teammates. Share game knowledge.<br>Play together on campus.</p>
+    <div class="ph" style="width:100%;height:170px">Illustration: players around a lobby</div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="signup1">Create account</a>
+    <a class="btn" data-go="login">Log in</a>
+    <p class="hint">Only for students of [College name]. Every account is checked by an admin.</p>
+  </div>
+  <div class="note">
+    <p>First screen for anyone not logged in. Two clear choices; the line at the bottom sets expectations that accounts need approval.</p>
+  </div>
+</template>
+
+<template id="signup1" data-group="1. Sign-up & login" data-title="Sign up 1/3: Account" data-spec="ACC-01, ACC-02">
+  <div class="top"><span class="icon-btn" data-go="welcome"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Create account</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span></span><span></span></div>
+    <div class="small">Step 1 of 3 · Your account</div>
+    <div class="field"><label>Full name</label><div class="input filled">Aung Ko Ko</div></div>
+    <div class="field"><label>College email</label><div class="input filled">aungkoko@yourcollege.edu</div><span class="hint">Must end in @yourcollege.edu. We'll send a code to check it.</span></div>
+    <div class="field"><label>Password</label><div class="input filled">••••••••••<span class="spacer"></span><svg class="i"><use href="#i-eye"/></svg></div><span class="hint">At least 8 characters</span></div>
+    <div class="field"><label>Confirm password</label><div class="input filled">••••••••••</div></div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="signup2">Next</a>
+    <p class="hint" style="text-align:center">Already have an account? <span class="link" data-go="login">Log in</span></p>
+  </div>
+  <div class="note">
+    <p>Splitting sign-up into 3 short steps keeps each screen simple on a phone.</p>
+    <ul><li>The college domain is checked as soon as the email field loses focus, so students find out early (ACC-02).</li></ul>
+  </div>
+</template>
+
+<template id="signup2" data-group="1. Sign-up & login" data-title="Sign up 2/3: Student check" data-spec="ACC-01, ACC-08, NFR-07">
+  <div class="top"><span class="icon-btn" data-go="signup1"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Create account</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+    <div class="small">Step 2 of 3 · Prove you're a student</div>
+    <div class="field"><label>Student ID number</label><div class="input filled">CS-2023-0418</div></div>
+    <div class="field"><label>Photo of your student ID card</label>
+      <div class="ph" style="height:150px;flex-direction:column;gap:6px;display:flex;justify-content:center;align-items:center">
+        <svg class="i" style="width:28px;height:28px"><use href="#i-cam"/></svg>
+        Take photo or choose from gallery
+      </div>
+      <span class="hint">JPG or PNG, up to 5 MB. Make sure your name and ID number are readable.</span>
+    </div>
+    <div class="banner info"><svg class="i"><use href="#i-shield"/></svg><span>Only admins can see this photo. It is <b>deleted 30 days</b> after your account is reviewed.</span></div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="signup3">Next</a>
+  </div>
+  <div class="note">
+    <p>The privacy message sits right next to the upload, because students will hesitate to share their ID card.</p>
+  </div>
+</template>
+
+<template id="signup3" data-group="1. Sign-up & login" data-title="Sign up 3/3: Games" data-spec="ACC-01, PRO-01, NFR-08">
+  <div class="top"><span class="icon-btn" data-go="signup2"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Create account</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+    <div class="small">Step 3 of 3 · Your games</div>
+    <p class="sub">Add at least one in-game ID. You can add ranks and roles later in your profile.</p>
+    <div class="card" style="cursor:default">
+      <div class="row"><div class="game">VAL</div><div class="grow"><div class="strong">Valorant</div><div class="small">Riot ID</div></div><svg class="i" style="color:var(--faint)"><use href="#i-x"/></svg></div>
+      <div class="input filled">NightOwl#MM01</div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="row"><div class="game">MLBB</div><div class="grow"><div class="strong">Mobile Legends</div><div class="small">Player ID (Server)</div></div><svg class="i" style="color:var(--faint)"><use href="#i-x"/></svg></div>
+      <div class="input filled">12345678 (2041)</div>
+    </div>
+    <a class="btn"><svg class="i"><use href="#i-plus"/></svg>Add another game</a>
+    <div class="check"><span class="box on"></span><span>I agree to the <span class="link">Terms of use</span> and <span class="link">Privacy policy</span></span></div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="verify">Create account</a>
+  </div>
+  <div class="note">
+    <p>The label under each game (Riot ID, Player ID…) comes from the games catalogue the admins manage, so it fits each game's ID format.</p>
+  </div>
+</template>
+
+<template id="verify" data-group="1. Sign-up & login" data-title="Verify email" data-spec="ACC-02">
+  <div class="top"><span class="icon-btn" data-go="signup3"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Verify email</span></div>
+  <div class="body center">
+    <div class="ph" style="width:72px;height:72px;border-radius:50%"><svg class="i" style="width:30px;height:30px"><use href="#i-mail"/></svg></div>
+    <h2 class="h">Check your email</h2>
+    <p class="sub">We sent a 6-digit code to<br><b style="color:var(--ink)">aungkoko@yourcollege.edu</b></p>
+    <div class="otp"><span>4</span><span>8</span><span>2</span><span class="cur"></span><span></span><span></span></div>
+    <p class="hint">Didn't get it? Resend code in 0:42 · <span class="link">Change email</span></p>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="pending">Verify</a>
+  </div>
+  <div class="note"><p>A code is easier than a link on mobile: students often open email on a different device.</p></div>
+</template>
+
+<template id="pending" data-group="1. Sign-up & login" data-title="Waiting for approval" data-spec="ACC-03, ACC-05, ACC-06">
+  <div class="top"><span class="title">Chill Hub</span><span class="btn ghost sm">Log out</span></div>
+  <div class="body center">
+    <div class="ph" style="width:72px;height:72px;border-radius:50%"><svg class="i" style="width:30px;height:30px"><use href="#i-clock"/></svg></div>
+    <h2 class="h">Almost there!</h2>
+    <p class="sub">An admin is checking your student ID. This usually takes less than a day.</p>
+    <div class="timeline">
+      <div><b class="done">✓</b><span><span class="strong">Account created</span><br><span class="small">Today, 2:14 PM</span></span></div>
+      <div><b class="done">✓</b><span><span class="strong">Email verified</span><br><span class="small">Today, 2:16 PM</span></span></div>
+      <div><b class="now">…</b><span><span class="strong">Admin review</span><br><span class="small">In progress</span></span></div>
+      <div><b></b><span><span class="strong" style="color:var(--muted)">Start playing</span></span></div>
+    </div>
+    <div class="banner info" style="text-align:left"><svg class="i"><use href="#i-bell"/></svg><span>We'll email you and send a notification when you're approved.</span></div>
+    <div class="spacer"></div>
+    <div class="demo">Prototype only: <a data-go="home">see approved</a> · <a data-go="rejected">see rejected</a></div>
+  </div>
+  <div class="note"><p>Pending users can only see this page (ACC-06). The timeline shows exactly where they are, which cuts down "is my account approved?" messages to admins.</p></div>
+</template>
+
+<template id="rejected" data-group="1. Sign-up & login" data-title="Sign-up rejected" data-spec="ACC-04, ACC-06">
+  <div class="top"><span class="title">Chill Hub</span><span class="btn ghost sm">Log out</span></div>
+  <div class="body center">
+    <div class="ph" style="width:72px;height:72px;border-radius:50%"><svg class="i" style="width:30px;height:30px"><use href="#i-x"/></svg></div>
+    <h2 class="h">We couldn't approve your account</h2>
+    <div class="banner bad" style="text-align:left;width:100%"><span><b>Reason from admin:</b><br>The ID photo is blurry and the ID number can't be read. Please upload a clearer photo.</span></div>
+    <p class="sub">Fix the problem and send your request again.</p>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="signup2">Fix and re-apply</a>
+    <a class="btn ghost">Contact the esports club</a>
+  </div>
+  <div class="note"><p>Re-applying jumps straight to the step that needs fixing, with the other details already filled in.</p></div>
+</template>
+
+<template id="login" data-group="1. Sign-up & login" data-title="Log in" data-spec="ACC-07, NFR-09">
+  <div class="top"><span class="icon-btn" data-go="welcome"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Log in</span></div>
+  <div class="body">
+    <h2 class="h">Welcome back</h2>
+    <div class="field"><label>College email</label><div class="input filled">aungkoko@yourcollege.edu</div></div>
+    <div class="field"><label>Password</label><div class="input filled">••••••••••<span class="spacer"></span><svg class="i"><use href="#i-eye"/></svg></div></div>
+    <div style="text-align:right"><span class="link" data-go="forgot">Forgot password?</span></div>
+    <a class="btn primary" data-go="home">Log in</a>
+    <div class="spacer"></div>
+    <p class="hint" style="text-align:center">New here? <span class="link" data-go="signup1">Create account</span></p>
+  </div>
+  <div class="note"><p>After 5 wrong passwords the button is disabled for a few minutes (NFR-09); the message would appear under the password field.</p></div>
+</template>
+
+<template id="forgot" data-group="1. Sign-up & login" data-title="Forgot password" data-spec="ACC-07">
+  <div class="top"><span class="icon-btn" data-go="login"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Reset password</span></div>
+  <div class="body">
+    <p class="sub">Enter your college email and we'll send you a link to set a new password.</p>
+    <div class="field"><label>College email</label><div class="input filled">aungkoko@yourcollege.edu</div></div>
+    <a class="btn primary">Send reset link</a>
+    <div class="banner info"><svg class="i"><use href="#i-mail"/></svg><span>If an account exists for this email, a reset link is on its way. It expires in 30 minutes.</span></div>
+  </div>
+  <div class="note"><p>The confirmation never says whether the email exists, so nobody can use this screen to find out who has an account.</p></div>
+</template>
+
+<template id="home" data-group="2. Home" data-title="Home dashboard" data-spec="Dashboard mix" data-tab="home">
+  <div class="top">
+    <div class="ph" style="width:30px;height:30px;border-radius:8px;font-size:9px">Logo</div>
+    <span class="title">Hi, NightOwl</span>
+    <span class="icon-btn" data-go="notifs"><svg class="i"><use href="#i-bell"/></svg><span class="dot">3</span></span>
+  </div>
+  <div class="body">
+    <h3 class="sec">My upcoming lobbies <a data-go="lobbies">See all</a></h3>
+    <div class="hscroll">
+      <div class="card" data-go="lobby-host">
+        <div class="row"><div class="game">VAL</div><div class="grow"><div class="strong">Valorant · Competitive</div><div class="small">Starts 8:00 PM · you're the host</div></div></div>
+        <div class="row between"><span class="small row" style="gap:6px">Code <span class="code">7KQ2-XP</span><span class="icon-btn" style="width:28px;height:28px" title="Copy code"><svg class="i" style="width:14px;height:14px"><use href="#i-copy"/></svg></span></span><span class="slots"><i></i><i></i><i></i><i class="e"></i><i class="e"></i></span></div>
+        <div class="banner warn" style="padding:6px 10px">2 join requests waiting</div>
+      </div>
+      <div class="card" data-go="lobby-member">
+        <div class="row"><div class="game">MLBB</div><div class="grow"><div class="strong">Mobile Legends · Ranked</div><div class="small">Starts 9:30 PM · member</div></div></div>
+        <div class="row between"><span class="small row" style="gap:6px">Code <span class="code">55120</span><span class="icon-btn" style="width:28px;height:28px" title="Copy code"><svg class="i" style="width:14px;height:14px"><use href="#i-copy"/></svg></span></span><span class="slots"><i></i><i></i><i></i><i></i><i class="e"></i></span></div>
+      </div>
+    </div>
+
+    <h3 class="sec">Play now in your games <a data-go="lobbies">All lobbies</a></h3>
+    <div class="lc" data-go="lobby-pub" data-g="VAL" data-name="Valorant · Unrated" data-time="Now" data-slots="2/5" data-rank="Silver – Gold" data-roles="Controller,Duelist" data-host="Rex_09" data-rep="38"></div>
+    <div class="lc" data-go="lobby-priv" data-g="MLBB" data-name="Mobile Legends · Classic" data-time="8:30 PM" data-slots="3/5" data-lock="1" data-rank="Epic – Legend" data-roles="Tank" data-host="mayzin.gg" data-noshow="2"></div>
+
+    <h3 class="sec">Latest news <a data-go="news">More</a></h3>
+    <div class="list-item" data-go="guide"><div class="ph thumb">img</div><div class="grow"><div class="strong">Patch 9.04: agent balance changes</div><div class="small">Valorant · Admin · 2 h ago</div></div></div>
+
+    <h3 class="sec">Trending guides <a data-go="knowledge">More</a></h3>
+    <div class="list-item" data-go="guide"><div class="ph thumb">img</div><div class="grow"><div class="strong">Smoke lineups for Ascent (B site)</div><div class="small">Valorant · by Kaze · <svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-up"/></svg> 54</div></div></div>
+    <div class="list-item" data-go="guide"><div class="ph thumb">img</div><div class="grow"><div class="strong">Best tank emblems this season</div><div class="small">Mobile Legends · by Thura · <svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-up"/></svg> 31</div></div></div>
+  </div>
+  <div class="note">
+    <p>Order of sections, top to bottom:</p>
+    <ul>
+      <li><b>My upcoming lobbies</b>: the most urgent thing. Members see the code right on the card; hosts see pending join requests.</li>
+      <li><b>Play now</b>: open lobbies only for games the player has on their profile.</li>
+      <li><b>News</b>, then <b>trending guides</b>.</li>
+    </ul>
+    <p>Lobby card = game, mode, start time &amp; slots · rank &amp; roles needed · host &amp; reputation. A lock icon marks private lobbies.</p>
+    <p>The codes on "My upcoming lobbies" have a copy button, so members can paste them straight into the game.</p>
+  </div>
+</template>
+
+<!-- placeholders so tab navigation works until the next batches -->
+<template id="lobbies" data-group="3. Lobbies" data-title="Browse lobbies" data-spec="LOB-06, LOB-08" data-tab="lobbies">
+  <div class="top"><span class="title">Lobbies</span><span class="icon-btn" data-go="create1" title="Create lobby"><svg class="i"><use href="#i-plus"/></svg></span></div>
+  <div class="body">
+    <div class="searchbar">
+      <div class="input"><svg class="i"><use href="#i-search"/></svg>Search host or note</div>
+      <a class="btn sm" data-go="filters" style="height:44px"><svg class="i"><use href="#i-filter"/></svg>Filters<span class="chip accent" style="height:20px;padding:0 6px">2</span></a>
+    </div>
+    <div class="hscroll chips" style="flex-wrap:nowrap">
+      <span class="chip" data-toggle="one">All games</span><span class="chip on" data-toggle="one">Valorant</span>
+      <span class="chip" data-toggle="one">Mobile Legends</span><span class="chip" data-toggle="one">PUBG Mobile</span><span class="chip" data-toggle="one">EA FC</span>
+    </div>
+    <div class="row between"><span class="small">12 open lobbies · Rank: Gold–Plat</span><span class="small">Sort: <b style="color:var(--ink)">Starting soon ▾</b></span></div>
+    <div class="lc" data-go="lobby-pub" data-g="VAL" data-name="Valorant · Unrated" data-time="Now" data-slots="2/5" data-rank="Silver – Gold" data-roles="Controller,Duelist" data-host="Rex_09" data-rep="38"></div>
+    <div class="lc" data-go="lobby-priv" data-g="VAL" data-name="Valorant · Competitive" data-time="Now" data-slots="4/5" data-lock="1" data-rank="Gold – Plat" data-roles="Sentinel" data-host="SuSu" data-rep="71"></div>
+    <div class="lc" data-go="lobby-pub" data-g="VAL" data-name="Valorant · Swiftplay" data-time="7:30 PM" data-slots="1/5" data-rank="Any rank" data-roles="" data-host="newbie_kyaw" data-rep="2"></div>
+    <div class="lc" data-go="lobby-priv" data-g="VAL" data-name="Valorant · Custom 5v5" data-time="9:00 PM" data-slots="6/10" data-lock="1" data-rank="Plat – Diamond" data-roles="IGL,Initiator" data-host="Kaze" data-noshow="3"></div>
+    <p class="hint" style="text-align:center">Full lobbies are hidden. Pull down to refresh.</p>
+  </div>
+  <div class="note">
+    <ul>
+      <li>Game chips at the top are the quickest filter; the rest (mode, rank, role, voice, time, public/private) are in <b>Filters</b>, with a count of active filters.</li>
+      <li>The player's own games come first in the chip row.</li>
+      <li>The list updates live (NFR-02): a lobby that fills up disappears (LOB-08).</li>
+    </ul>
+  </div>
+</template>
+
+<template id="filters" data-group="3. Lobbies" data-title="Lobby filters" data-spec="LOB-06">
+  <div class="top"><span class="icon-btn" data-go="lobbies"><svg class="i"><use href="#i-x"/></svg></span><span class="title">Filters</span><span class="btn ghost sm">Reset</span></div>
+  <div class="body">
+    <div class="field"><label>Game</label><div class="input filled">Valorant ▾</div></div>
+    <div class="field"><label>Mode</label><div class="chips"><span class="chip on" data-toggle>Any</span><span class="chip" data-toggle>Competitive</span><span class="chip" data-toggle>Unrated</span><span class="chip" data-toggle>Swiftplay</span><span class="chip" data-toggle>Custom</span></div></div>
+    <div class="field"><label>My rank fits</label><div class="row"><div class="input filled grow">Gold ▾</div><span class="small">to</span><div class="input filled grow">Platinum ▾</div></div></div>
+    <div class="field"><label>Role needed</label><div class="chips"><span class="chip" data-toggle>Duelist</span><span class="chip on" data-toggle>Controller</span><span class="chip" data-toggle>Initiator</span><span class="chip" data-toggle>Sentinel</span><span class="chip" data-toggle>IGL</span></div></div>
+    <div class="field"><label>Voice chat</label><div class="seg"><span class="on" data-toggle>Any</span><span data-toggle>Voice on</span><span data-toggle>No voice</span></div></div>
+    <div class="field"><label>Start time</label><div class="seg"><span data-toggle>Now</span><span class="on" data-toggle>Today</span><span data-toggle>This week</span></div></div>
+    <div class="field"><label>Lobby type</label><div class="seg"><span class="on" data-toggle>Any</span><span data-toggle>Public</span><span data-toggle>Private</span></div></div>
+    <div class="setting"><span class="grow">Save as alert<br><span class="small">Notify me when a matching lobby is posted · later phase</span></span><span class="switch" data-toggle></span></div>
+    <a class="btn primary" data-go="lobbies">Show 12 lobbies</a>
+  </div>
+  <div class="note">
+    <p>Modes, ranks and roles change with the selected game (from the admin's games catalogue, GAM-03).</p>
+    <p>"Save as alert" is the later-phase feature LOB-14, shown disabled-looking so the layout has room for it.</p>
+  </div>
+</template>
+
+<template id="create1" data-group="3. Lobbies" data-title="Create 1/3: Game & mode" data-spec="LOB-01, NFR-11" data-tab="create">
+  <div class="top"><span class="icon-btn" data-go="home"><svg class="i"><use href="#i-x"/></svg></span><span class="title">Create lobby</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span></span><span></span></div>
+    <div class="small">Step 1 of 3 · What are you playing?</div>
+    <div class="grid3">
+      <div class="tile on" data-toggle="one"><div class="game">VAL</div>Valorant</div>
+      <div class="tile" data-toggle="one"><div class="game">MLBB</div>Mobile Legends</div>
+      <div class="tile" data-toggle="one"><div class="game">PUBG</div>PUBG Mobile</div>
+      <div class="tile" data-toggle="one"><div class="game">FC</div>EA FC</div>
+      <div class="tile" data-toggle="one"><div class="game">LoL</div>League of Legends</div>
+      <div class="tile" data-toggle="one"><div class="game">+</div>More</div>
+    </div>
+    <div class="field"><label>Mode</label><div class="chips"><span class="chip on" data-toggle="one">Competitive</span><span class="chip" data-toggle="one">Unrated</span><span class="chip" data-toggle="one">Swiftplay</span><span class="chip" data-toggle="one">Custom 5v5</span></div></div>
+    <div class="banner info"><span>You're hosting 1 of 3 allowed active lobbies.</span></div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="create2">Next</a>
+  </div>
+  <div class="note">
+    <p>Games on the player's profile are listed first. The banner shows the 3-active-lobby limit (LOB-13) before they fill in the form, not after.</p>
+  </div>
+</template>
+
+<template id="create2" data-group="3. Lobbies" data-title="Create 2/3: Code & privacy" data-spec="LOB-01, LOB-02, LOB-03">
+  <div class="top"><span class="icon-btn" data-go="create1"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Create lobby</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+    <div class="small">Step 2 of 3 · Lobby code</div>
+    <div class="banner info"><span><b>First, create the party in Valorant</b>, then copy its code and paste it here.</span></div>
+    <div class="field"><label>In-game lobby code *</label>
+      <div class="input filled" style="font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.06em">7KQ2-XP<span class="spacer"></span><span class="btn ghost sm" style="height:30px;font-family:system-ui,sans-serif;letter-spacing:0"><svg class="i"><use href="#i-paste"/></svg>Paste</span></div>
+      <span class="hint">Required. You can change it later if the party code changes.</span>
+    </div>
+    <div class="field"><label>Who can see the code?</label>
+      <div class="choice" data-toggle="one"><span class="radio"></span><span><b>Public</b><br><span class="small">Any approved player can take a slot and see the code right away.</span></span></div>
+      <div class="choice on" data-toggle="one"><span class="radio"></span><span><b>Private</b> <svg class="i" style="width:14px;height:14px;vertical-align:-2px"><use href="#i-lock"/></svg><br><span class="small">Players send a request. Only people you accept see the code.</span></span></div>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="create3">Next</a>
+    <div class="demo">Prototype only: <a data-go="create2err">see "code missing" error</a></div>
+  </div>
+  <div class="note">
+    <p>The step starts with a reminder to make the party in the game first, because the code has to exist before the lobby can be posted (LOB-02).</p>
+    <p>Public/private is a big choice, so each option explains what other players will see.</p>
+  </div>
+</template>
+
+<template id="create2err" data-group="3. Lobbies" data-title="Create 2/3: Code missing" data-spec="LOB-02">
+  <div class="top"><span class="icon-btn" data-go="create1"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Create lobby</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+    <div class="small">Step 2 of 3 · Lobby code</div>
+    <div class="field"><label>In-game lobby code *</label>
+      <div class="input" style="border:2px solid var(--bad)"><span class="spacer"></span><span class="btn ghost sm" style="height:30px;font-family:system-ui,sans-serif;letter-spacing:0"><svg class="i"><use href="#i-paste"/></svg>Paste</span></div>
+      <span class="hint err">Enter the lobby code from the game. Players can't join without it.</span>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn primary" style="opacity:.45">Next</a>
+  </div>
+  <div class="note"><p>"Next" stays disabled until a code is entered, so a lobby can never be published without one.</p></div>
+</template>
+
+<template id="create3" data-group="3. Lobbies" data-title="Create 3/3: Details" data-spec="LOB-01, LOB-12">
+  <div class="top"><span class="icon-btn" data-go="create2"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Create lobby</span></div>
+  <div class="body">
+    <div class="steps"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+    <div class="small">Step 3 of 3 · Who do you need?</div>
+    <div class="field"><label>Players needed (besides you)</label><div class="stepper"><b>−</b><span>3</span><b>+</b></div><span class="hint">Valorant team size is 5. You already have 1 friend: set 3.</span></div>
+    <div class="field"><label>Rank range</label><div class="row"><div class="input filled grow">Gold ▾</div><span class="small">to</span><div class="input filled grow">Platinum ▾</div></div></div>
+    <div class="field"><label>Roles needed (optional)</label><div class="chips"><span class="chip" data-toggle>Duelist</span><span class="chip on" data-toggle>Controller</span><span class="chip" data-toggle>Initiator</span><span class="chip on" data-toggle>Sentinel</span><span class="chip" data-toggle>IGL</span></div></div>
+    <div class="setting"><svg class="i"><use href="#i-mic"/></svg><span class="grow">Voice chat</span><span class="switch on" data-toggle></span></div>
+    <div class="field"><label>Start</label><div class="seg"><span data-toggle>Now</span><span class="on" data-toggle>Schedule</span></div>
+      <div class="input filled"><svg class="i"><use href="#i-cal"/></svg>Today, 8:00 PM</div></div>
+    <div class="field"><label>Note (optional)</label><div class="input" style="height:64px;align-items:flex-start;padding-top:10px">e.g. "Chill games, mic required"</div></div>
+    <a class="btn primary" data-go="lobby-host">Publish lobby</a>
+  </div>
+  <div class="note">
+    <p>Everything optional sits on this last step, so a quick "play now" lobby takes about 30 seconds.</p>
+    <p>Rank options and roles come from the selected game. Members get a reminder 10 minutes before a scheduled start (LOB-12).</p>
+  </div>
+</template>
+
+<template id="lobby-pub" data-group="3. Lobbies" data-title="Lobby: public (not joined)" data-spec="LOB-04, MOD-01">
+  <div class="top"><span class="icon-btn" data-go="lobbies"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Lobby</span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="body">
+    <div class="row"><div class="game" style="width:48px;height:48px">VAL</div><div class="grow"><div class="strong" style="font-size:16px">Valorant · Unrated</div><div class="small">Starts now · Public</div></div><span class="chip ok">Open</span></div>
+    <div class="codebar"><span class="small grow">Lobby code</span><span class="code">K9XM-22</span><span class="icon-btn" style="width:30px;height:30px"><svg class="i" style="width:15px;height:15px"><use href="#i-copy"/></svg></span></div>
+    <div class="card" style="cursor:default">
+      <div class="row between"><span class="strong">Players 2/5</span><span class="slots"><i></i><i></i><i class="e"></i><i class="e"></i><i class="e"></i></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Rex_09</b> <span class="chip" style="height:20px">Host</span><br><span class="small">Gold 2 · Duelist</span></span><span class="chip ok">👍 38</span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Thura</b><br><span class="small">Silver 3 · Initiator</span></span><span class="chip ok">👍 12</span></div>
+      <div class="member empty"><span class="avatar"></span><span class="small grow">Open slot · Controller wanted</span></div>
+      <div class="member empty"><span class="avatar"></span><span class="small grow">Open slot · Duelist wanted</span></div>
+      <div class="member empty"><span class="avatar"></span><span class="small grow">Open slot</span></div>
+    </div>
+    <dl class="kv"><dt>Rank</dt><dd>Silver – Gold</dd><dt>Voice</dt><dd>On (Discord)</dd><dt>Note</dt><dd style="font-weight:400">Chill games, no toxicity pls</dd></dl>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="lobby-member">Take a slot</a>
+    <a class="btn ghost" data-go="report"><svg class="i"><use href="#i-flag"/></svg>Report lobby</a>
+  </div>
+  <div class="note">
+    <p>For a public lobby, any approved player sees the code even before joining (LOB-04, as you chose). "Take a slot" adds them to the member list and chat.</p>
+    <p>The ⋯ menu also has "Report lobby" (e.g. fake or wrong code).</p>
+  </div>
+</template>
+
+<template id="lobby-priv" data-group="3. Lobbies" data-title="Lobby: private (request)" data-spec="LOB-05, NFR-06">
+  <div class="top"><span class="icon-btn" data-go="lobbies"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Lobby</span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="body">
+    <div class="row"><div class="game" style="width:48px;height:48px">MLBB</div><div class="grow"><div class="strong" style="font-size:16px">Mobile Legends · Classic</div><div class="small">Starts 8:30 PM · Private</div></div><span class="chip ok">Open</span></div>
+    <div class="codebar hidden"><svg class="i"><use href="#i-lock"/></svg><span class="small grow">The code is shown after the host accepts you</span></div>
+    <div class="card" style="cursor:default">
+      <div class="row between"><span class="strong">Players 3/5</span><span class="slots"><i></i><i></i><i></i><i class="e"></i><i class="e"></i></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>mayzin.gg</b> <span class="chip" style="height:20px">Host</span><br><span class="small">Legend IV · Mage</span></span><span class="chip warn">2 no-shows</span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>ZawGG</b><br><span class="small">Epic I · Marksman</span></span><span class="chip ok">👍 20</span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Hnin</b><br><span class="small">Legend II · Support</span></span><span class="chip ok">👍 44</span></div>
+      <div class="member empty"><span class="avatar"></span><span class="small grow">Open slot · Tank wanted</span></div>
+      <div class="member empty"><span class="avatar"></span><span class="small grow">Open slot</span></div>
+    </div>
+    <dl class="kv"><dt>Rank</dt><dd>Epic – Legend</dd><dt>Voice</dt><dd>No voice</dd></dl>
+    <div class="spacer"></div>
+    <div class="banner info" style="justify-content:center">Request sent · waiting for the host</div>
+    <a class="btn primary">Request to join</a>
+    <a class="btn ghost">Cancel request</a>
+  </div>
+  <div class="note">
+    <p>Shows both states of the bottom area: before (<b>Request to join</b>) and after (<b>Request sent · Cancel request</b>). The real app shows only one at a time.</p>
+    <p>The code is never sent to this player's phone until they're accepted (NFR-06), so it can't be read from the app's data.</p>
+  </div>
+</template>
+
+<template id="lobby-member" data-group="3. Lobbies" data-title="Lobby: member · details" data-spec="LOB-10, LOB-11">
+  <div class="top"><span class="icon-btn" data-go="home"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Mobile Legends · Ranked</span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="ptabs"><a class="on">Details</a><a data-go="lobby-chat">Chat <span class="chip accent" style="height:18px;padding:0 6px">4</span></a></div>
+  <div class="body">
+    <div class="codebar"><span class="small grow">Lobby code</span><span class="code">55120</span><span class="icon-btn" style="width:30px;height:30px"><svg class="i" style="width:15px;height:15px"><use href="#i-copy"/></svg></span></div>
+    <div class="row"><svg class="i"><use href="#i-clock"/></svg><span class="grow">Starts <b>9:30 PM</b> · in 45 min</span><span class="chip ok">Open</span></div>
+    <div class="card" style="cursor:default">
+      <div class="row between"><span class="strong">Players 4/5</span><span class="slots"><i></i><i></i><i></i><i></i><i class="e"></i></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Hnin</b> <span class="chip" style="height:20px">Host</span><br><span class="small">Legend II · Support</span></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>NightOwl</b> (you)<br><span class="small">Epic I · Tank</span></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>ZawGG</b><br><span class="small">Epic I · Marksman</span></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Kyaw</b><br><span class="small">Legend V · Fighter</span></span></div>
+      <div class="member empty"><span class="avatar"></span><span class="small grow">Open slot</span></div>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn">Leave lobby</a>
+  </div>
+  <div class="note">
+    <p>Once you're a member, the code is pinned at the top of both tabs with a copy button.</p>
+    <p>Leaving notifies the host (LOB-10) and frees the slot.</p>
+  </div>
+</template>
+
+<template id="lobby-chat" data-group="3. Lobbies" data-title="Lobby: member · chat" data-spec="LOB-07, LOB-11, MOD-01">
+  <div class="top"><span class="icon-btn" data-go="home"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Mobile Legends · Ranked</span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="ptabs"><a data-go="lobby-member">Details</a><a class="on">Chat</a></div>
+  <div class="codebar" style="border-radius:0"><span class="small grow">Lobby code</span><span class="code">55120</span><span class="icon-btn" style="width:30px;height:30px"><svg class="i" style="width:15px;height:15px"><use href="#i-copy"/></svg></span></div>
+  <div class="body" style="gap:8px">
+    <span class="sysmsg">ZawGG joined the lobby</span>
+    <div class="msg"><div class="who">Hnin (host)</div>Who's playing jungle tonight?</div>
+    <div class="msg me">I can tank, Kyaw jungle?</div>
+    <span class="sysmsg">Kyaw joined the lobby</span>
+    <div class="msg"><div class="who">Kyaw</div>Yep, jungle is fine 👍</div>
+    <span class="sysmsg">Host changed the lobby code to 55120</span>
+    <div class="msg"><div class="who">Hnin (host)</div>New room, use the code above</div>
+  </div>
+  <div class="composer"><div class="input">Message the lobby…</div><span class="send"><svg class="i"><use href="#i-send"/></svg></span></div>
+  <div class="note">
+    <p>Text only (LOB-11). System messages show joins, leaves and code changes, so nobody misses a new code (LOB-07).</p>
+    <p>Long-press a message to report it (MOD-01). After the lobby closes the chat becomes read-only and is deleted after 7 days.</p>
+  </div>
+</template>
+
+<template id="lobby-host" data-group="3. Lobbies" data-title="Lobby: host view" data-spec="LOB-05, LOB-07">
+  <div class="top"><span class="icon-btn" data-go="home"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Valorant · Competitive</span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="ptabs"><a class="on">Details</a><a data-go="lobby-chat">Chat</a></div>
+  <div class="body">
+    <div class="codebar"><span class="small grow">Lobby code · Private</span><span class="code">7KQ2-XP</span><span class="btn ghost sm" style="height:30px;padding:0 8px">Change</span></div>
+    <h3 class="sec">Join requests (2)</h3>
+    <div class="card" style="cursor:default">
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Aye_Chan</b><br><span class="small">Gold 3 · Controller · 👍 25</span></span><span class="icon-btn" style="color:var(--bad)"><svg class="i"><use href="#i-x"/></svg></span><span class="icon-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)"><svg class="i"><use href="#i-check"/></svg></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Phyo</b><br><span class="small">Plat 1 · Sentinel · <span style="color:var(--warn)">3 no-shows</span></span></span><span class="icon-btn" style="color:var(--bad)"><svg class="i"><use href="#i-x"/></svg></span><span class="icon-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)"><svg class="i"><use href="#i-check"/></svg></span></div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="row between"><span class="strong">Players 3/5</span><span class="slots"><i></i><i></i><i></i><i class="e"></i><i class="e"></i></span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>NightOwl</b> (you, host)</span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Min Thant</b><br><span class="small">Gold 1 · Duelist</span></span><span class="small link">Remove</span></div>
+      <div class="member"><span class="avatar"></span><span class="grow"><b>Su</b><br><span class="small">Plat 2 · Initiator</span></span><span class="small link">Remove</span></div>
+    </div>
+    <div class="row"><a class="btn">Edit lobby</a><a class="btn" data-go="rate">Close lobby</a></div>
+  </div>
+  <div class="note">
+    <p>Join requests sit at the top with each player's rank, role and reputation, so the host can decide quickly.</p>
+    <p>"Change" next to the code updates it and notifies every member. "Close lobby" ends it and opens the rating screen.</p>
+  </div>
+</template>
+
+<template id="rate" data-group="3. Lobbies" data-title="Rate teammates" data-spec="REP-01 to REP-03">
+  <div class="top"><span class="icon-btn" data-go="home"><svg class="i"><use href="#i-x"/></svg></span><span class="title">How was your team?</span></div>
+  <div class="body">
+    <p class="sub">Valorant · Competitive · ended 10:42 PM. Ratings are anonymous, and you can change them for 24 hours.</p>
+    <div class="rate-row"><span class="avatar" style="width:32px;height:32px"></span><b class="grow">Min Thant</b><span class="opt"><span class="good on" data-toggle="one">👍 Good</span><span class="bad" data-toggle="one">No-show</span></span></div>
+    <div class="rate-row"><span class="avatar" style="width:32px;height:32px"></span><b class="grow">Su</b><span class="opt"><span class="good on" data-toggle="one">👍 Good</span><span class="bad" data-toggle="one">No-show</span></span></div>
+    <div class="rate-row"><span class="avatar" style="width:32px;height:32px"></span><b class="grow">Aye_Chan</b><span class="opt"><span class="good" data-toggle="one">👍 Good</span><span class="bad on" data-toggle="one">No-show</span></span></div>
+    <div class="rate-row"><span class="avatar" style="width:32px;height:32px"></span><b class="grow">Phyo</b><span class="opt"><span class="good" data-toggle="one">👍 Good</span><span class="bad" data-toggle="one">No-show</span></span></div>
+    <p class="hint">Skipping a player gives no rating. Something worse than a no-show? <span class="link">Report a player</span></p>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="home">Submit ratings</a>
+    <a class="btn ghost" data-go="home">Skip for now</a>
+  </div>
+  <div class="note">
+    <p>Pops up automatically for members who have the app open when the lobby closes or expires; everyone else gets a notification that opens this screen. Only two choices keep it fast (REP-01).</p>
+    <p>Toxic behaviour goes through Report instead, so moderators can see it.</p>
+  </div>
+</template>
+<template id="knowledge" data-group="4. Knowledge" data-title="Knowledge: Guides" data-spec="KNO-01, KNO-05" data-tab="knowledge">
+  <div class="top"><span class="title">Knowledge</span><span class="icon-btn"><svg class="i"><use href="#i-search"/></svg></span><span class="icon-btn" data-go="write"><svg class="i"><use href="#i-plus"/></svg></span></div>
+  <div class="ptabs"><a class="on">Guides</a><a data-go="qa">Q&amp;A</a><a data-go="news">News</a></div>
+  <div class="body">
+    <div class="hscroll chips" style="flex-wrap:nowrap">
+      <span class="chip" data-toggle="one">All games</span><span class="chip on" data-toggle="one">Valorant</span><span class="chip" data-toggle="one">Mobile Legends</span><span class="chip" data-toggle="one">PUBG Mobile</span>
+    </div>
+    <div class="row between"><span class="small">Tags: <span class="chip" style="height:22px">Agents</span> <span class="chip" style="height:22px">Maps</span> <span class="chip" style="height:22px">Aim</span></span><span class="small">Sort: <b style="color:var(--ink)">Top ▾</b></span></div>
+    <div class="card" data-go="guide">
+      <div class="ph" style="height:120px">Cover image</div>
+      <div class="strong">Smoke lineups for Ascent (B site)</div>
+      <div class="row"><span class="avatar"></span><span class="small grow">Kaze · 3 days ago · 6 min read</span><span class="chip ok"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>54</span></div>
+    </div>
+    <div class="list-item" data-go="guide"><div class="ph thumb">img</div><div class="grow"><div class="strong">Crosshair settings the pros use</div><div class="small">Kaze · Aim · <svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-up"/></svg> 41</div></div></div>
+    <div class="list-item" data-go="guide"><div class="ph thumb">img</div><div class="grow"><div class="strong">Sova recon darts on every map</div><div class="small">Thura · Agents · <svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-up"/></svg> 33</div></div></div>
+    <div class="list-item" data-go="guide"><div class="ph thumb">img</div><div class="grow"><div class="strong">Economy basics: when to save</div><div class="small">SuSu · Strategy · <svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-up"/></svg> 28</div></div></div>
+  </div>
+  <div class="note">
+    <p>Three sub-tabs: Guides · Q&amp;A · News. Each has the same game chips and search (KNO-05).</p>
+    <p>The top guide gets a large card with a cover image; the rest are compact so more fit on screen. Sort: Top (most upvoted) or Newest.</p>
+    <p>The + button opens the editor (guide or question).</p>
+  </div>
+</template>
+
+<template id="qa" data-group="4. Knowledge" data-title="Knowledge: Q&A" data-spec="KNO-02, KNO-03" data-tab="knowledge">
+  <div class="top"><span class="title">Knowledge</span><span class="icon-btn"><svg class="i"><use href="#i-search"/></svg></span><span class="icon-btn" data-go="write"><svg class="i"><use href="#i-plus"/></svg></span></div>
+  <div class="ptabs"><a data-go="knowledge">Guides</a><a class="on">Q&amp;A</a><a data-go="news">News</a></div>
+  <div class="body">
+    <div class="hscroll chips" style="flex-wrap:nowrap">
+      <span class="chip" data-toggle="one">All games</span><span class="chip" data-toggle="one">Valorant</span><span class="chip on" data-toggle="one">Mobile Legends</span><span class="chip" data-toggle="one">PUBG Mobile</span>
+    </div>
+    <div class="seg"><span class="on" data-toggle>Newest</span><span data-toggle>Unanswered</span><span data-toggle>Top</span></div>
+    <div class="card" data-go="question">
+      <div class="strong">Which emblem for Tigreal in the current season?</div>
+      <div class="chips"><span class="chip">Tank</span><span class="chip">Emblems</span></div>
+      <div class="row"><span class="small grow">Asked by NightOwl · 5 h ago</span><span class="chip ok">✓ 3 answers</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>12</span></div>
+    </div>
+    <div class="card" data-go="question">
+      <div class="strong">How do I stop feeding in early game as jungler?</div>
+      <div class="chips"><span class="chip">Jungle</span></div>
+      <div class="row"><span class="small grow">Asked by Kyaw · 1 day ago</span><span class="chip">5 answers</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>8</span></div>
+    </div>
+    <div class="card" data-go="question">
+      <div class="strong">Best server time for ranked from campus Wi-Fi?</div>
+      <div class="chips"><span class="chip">Network</span></div>
+      <div class="row"><span class="small grow">Asked by Hnin · 2 days ago</span><span class="chip warn">No answers yet</span></div>
+    </div>
+  </div>
+  <div class="note">
+    <p>A green "✓" means the asker has accepted an answer. "Unanswered" helps experienced players find questions to help with.</p>
+  </div>
+</template>
+
+<template id="news" data-group="4. Knowledge" data-title="Knowledge: News" data-spec="KNO-04" data-tab="knowledge">
+  <div class="top"><span class="title">Knowledge</span><span class="icon-btn"><svg class="i"><use href="#i-search"/></svg></span><span class="icon-btn" data-go="write"><svg class="i"><use href="#i-plus"/></svg></span></div>
+  <div class="ptabs"><a data-go="knowledge">Guides</a><a data-go="qa">Q&amp;A</a><a class="on">News</a></div>
+  <div class="body">
+    <div class="card" data-go="guide" style="border-color:var(--accent)">
+      <span class="chip accent" style="align-self:flex-start">Campus news</span>
+      <div class="ph" style="height:110px">Banner image</div>
+      <div class="strong">Esports club try-outs this Saturday</div>
+      <div class="small">Esports club · 1 h ago</div>
+    </div>
+    <div class="list-item" data-go="guide"><div class="game">VAL</div><div class="grow"><div class="strong">Patch 9.04: agent balance changes</div><div class="small">Patch notes · Admin · 2 h ago</div></div></div>
+    <div class="list-item" data-go="guide"><div class="game">MLBB</div><div class="grow"><div class="strong">New season starts: rank reset explained</div><div class="small">Patch notes · Admin · 1 day ago</div></div></div>
+    <div class="list-item" data-go="guide"><div class="game">PUBG</div><div class="grow"><div class="strong">Version 3.5: new map rotation</div><div class="small">Patch notes · Editor · 3 days ago</div></div></div>
+  </div>
+  <div class="note">
+    <p>Only admins and users they authorise can post news (KNO-04). Campus news is highlighted at the top; patch notes are listed below with the game icon.</p>
+  </div>
+</template>
+
+<template id="guide" data-group="4. Knowledge" data-title="Guide reader" data-spec="KNO-01, KNO-03, KNO-06, KNO-07">
+  <div class="top"><span class="icon-btn" data-go="knowledge"><svg class="i"><use href="#i-back"/></svg></span><span class="title"></span><span class="icon-btn" title="Bookmark (Phase 2)"><svg class="i"><use href="#i-book"/></svg></span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="body">
+    <div class="ph" style="height:160px">Cover image</div>
+    <h2 class="h">Smoke lineups for Ascent (B site)</h2>
+    <div class="chips"><span class="chip">Valorant</span><span class="chip">Maps</span><span class="chip">Controller</span></div>
+    <div class="row"><span class="avatar"></span><span class="small grow"><b style="color:var(--ink)">Kaze</b> · Plat 2 · 3 days ago</span></div>
+    <p style="margin:0">Taking B site on Ascent is much easier with these three smokes. Each lineup works from the attacker spawn…</p>
+    <h3 style="margin:4px 0 0;font-size:15px">1. Market smoke</h3>
+    <div class="ph" style="height:130px">Screenshot of the lineup</div>
+    <p style="margin:0" class="sub">Stand on the left corner of the crate, aim at the top of the antenna…</p>
+    <div class="row" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0">
+      <a class="btn sm" style="background:var(--accent-soft);border-color:transparent;color:var(--accent)"><svg class="i"><use href="#i-up"/></svg>Helpful · 54</a>
+      <span class="spacer"></span><span class="small link"><svg class="i" style="width:14px;height:14px;vertical-align:-2px"><use href="#i-flag"/></svg> Report</span>
+    </div>
+    <h3 class="sec">Comments (6)</h3>
+    <div class="row" style="align-items:flex-start"><span class="avatar"></span><div class="grow"><b>Su</b> <span class="small">· 2 days ago</span><br>The third one saved my round, thanks!</div></div>
+    <div class="row" style="align-items:flex-start"><span class="avatar"></span><div class="grow"><b>Min Thant</b> <span class="small">· 1 day ago</span><br>Does the market one work on the new patch?</div></div>
+  </div>
+  <div class="composer"><div class="input">Add a comment…</div><span class="send"><svg class="i"><use href="#i-send"/></svg></span></div>
+  <div class="note">
+    <p>One upvote button ("Helpful") rather than up/down, to keep things positive.</p>
+    <p>The bookmark icon is for Phase 2 (KNO-07). The author sees Edit/Delete in the ⋯ menu (KNO-06). News posts use this same reader layout.</p>
+  </div>
+</template>
+
+<template id="question" data-group="4. Knowledge" data-title="Question thread" data-spec="KNO-02, KNO-03">
+  <div class="top"><span class="icon-btn" data-go="qa"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Question</span><span class="icon-btn"><svg class="i"><use href="#i-more"/></svg></span></div>
+  <div class="body">
+    <div class="chips"><span class="chip">Mobile Legends</span><span class="chip">Tank</span><span class="chip">Emblems</span></div>
+    <h2 class="h" style="font-size:18px">Which emblem for Tigreal in the current season?</h2>
+    <p style="margin:0" class="sub">I've been using Tank emblem but keep dying early. Is Support emblem better now?</p>
+    <div class="row"><span class="avatar"></span><span class="small grow">NightOwl · 5 h ago</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>12</span></div>
+    <h3 class="sec">3 answers · accepted first, then most helpful</h3>
+    <div class="card" style="cursor:default;border-color:var(--ok)">
+      <span class="chip ok" style="align-self:flex-start">✓ Accepted answer</span>
+      <div>Use Support emblem with Pull Yourself Together. You get more heal and roam faster in the early game.</div>
+      <div class="row"><span class="avatar"></span><span class="small grow">Hnin · Legend II</span><span class="chip ok"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>9</span></div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div>Tank emblem is still fine, but buy Dominance Ice earlier.</div>
+      <div class="row"><span class="avatar"></span><span class="small grow">ZawGG · Epic I</span><span class="small link">Accept</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>4</span></div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div>Depends on your team. With no healer, go Support.</div>
+      <div class="row"><span class="avatar"></span><span class="small grow">Kyaw · Legend V</span><span class="small link">Accept</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>1</span></div>
+    </div>
+  </div>
+  <div class="composer"><div class="input">Write an answer…</div><span class="send"><svg class="i"><use href="#i-send"/></svg></span></div>
+  <div class="note">
+    <p>Answers: the accepted one is pinned on top, then the rest by votes (as you chose).</p>
+    <p>"Accept" links are only visible to the person who asked (shown here because NightOwl asked). The asker is notified of every new answer.</p>
+  </div>
+</template>
+
+<template id="write" data-group="4. Knowledge" data-title="Write guide / ask" data-spec="KNO-01, KNO-02">
+  <div class="top"><span class="icon-btn" data-go="knowledge"><svg class="i"><use href="#i-x"/></svg></span><span class="title">New post</span><span class="btn primary sm" data-go="guide">Publish</span></div>
+  <div class="body">
+    <div class="seg"><span class="on" data-toggle>Guide</span><span data-toggle>Question</span></div>
+    <div class="ph" style="height:90px">+ Add cover image (optional)</div>
+    <div class="input filled" style="font-size:17px;font-weight:700;height:48px">Smoke lineups for Ascent (B site)</div>
+    <div class="row"><div class="input filled grow">Valorant ▾</div></div>
+    <div class="field"><label>Tags (up to 5)</label><div class="chips"><span class="chip on" data-toggle>Maps</span><span class="chip on" data-toggle>Controller</span><span class="chip" data-toggle>Agents</span><span class="chip" data-toggle>+ New tag</span></div></div>
+    <div class="row" style="background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:6px;gap:4px">
+      <span class="icon-btn" style="border:0;font-weight:800">B</span><span class="icon-btn" style="border:0;font-style:italic;font-weight:700">I</span><span class="icon-btn" style="border:0;font-weight:800">H</span><span class="icon-btn" style="border:0">•≡</span><span class="icon-btn" style="border:0">1.</span><span class="icon-btn" style="border:0"><svg class="i"><use href="#i-cam"/></svg></span><span class="icon-btn" style="border:0">🔗</span>
+    </div>
+    <div class="input filled" style="height:200px;align-items:flex-start;padding-top:10px;line-height:1.5;flex-direction:column;gap:6px">
+      <span>Taking B site on Ascent is much easier with these three smokes.</span>
+      <b>1. Market smoke</b>
+      <div class="ph" style="height:60px;width:100%">image</div>
+      <span style="color:var(--faint)">Keep writing…</span>
+    </div>
+    <span class="hint">Draft saved 10 s ago</span>
+  </div>
+  <div class="note">
+    <p>Simple rich text: bold, italic, heading, lists, image and link. Drafts autosave.</p>
+    <p>Switching to <b>Question</b> hides the cover image and shows a shorter body box. Images are limited to 5 MB each (NFR-10).</p>
+  </div>
+</template>
+<template id="profile" data-group="5. Profile & notifications" data-title="My profile" data-spec="PRO-01 to PRO-04, REP-02" data-tab="profile">
+  <div class="top"><span class="title">Profile</span><span class="icon-btn" data-go="settings" title="Settings">⚙</span></div>
+  <div class="body">
+    <div class="row" style="gap:14px"><span class="avatar lg"></span><div class="grow"><div class="strong" style="font-size:18px">NightOwl</div><div class="small">Aung Ko Ko · Computer Science, Year 3</div><div class="small">"Tank main. Chill games after 8 PM."</div></div></div>
+    <a class="btn sm" data-go="edit-profile" style="width:100%">Edit profile</a>
+    <h3 class="sec">My games</h3>
+    <div class="card" style="cursor:default">
+      <div class="row"><div class="game">MLBB</div><div class="grow"><div class="strong">Mobile Legends</div><div class="small">ID 12345678 (2041)</div></div><span class="chip accent">Epic I</span></div>
+      <div class="chips"><span class="chip">Tank</span><span class="chip">Support</span></div>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="row"><div class="game">VAL</div><div class="grow"><div class="strong">Valorant</div><div class="small">NightOwl#MM01</div></div><span class="chip accent">Gold 2</span></div>
+      <div class="chips"><span class="chip">Controller</span></div>
+    </div>
+    <h3 class="sec">Reputation</h3>
+    <div class="row">
+      <div class="card grow" style="cursor:default;align-items:center"><div class="strong" style="font-size:22px">👍 46</div><div class="small">Good teammate</div></div>
+      <div class="card grow" style="cursor:default;align-items:center"><div class="strong" style="font-size:22px">2%</div><div class="small">No-show rate</div></div>
+      <div class="card grow" style="cursor:default;align-items:center"><div class="strong" style="font-size:22px">58</div><div class="small">Lobbies played</div></div>
+    </div>
+    <h3 class="sec">Badges <span class="small" style="text-transform:none;letter-spacing:0">Phase 2</span></h3>
+    <div class="row"><div class="ph" style="width:48px;height:48px;border-radius:50%">🏆</div><div class="ph" style="width:48px;height:48px;border-radius:50%">—</div><div class="ph" style="width:48px;height:48px;border-radius:50%">—</div></div>
+    <h3 class="sec">My posts <a>See all</a></h3>
+    <div class="list-item" data-go="question"><div class="grow"><div class="strong">Which emblem for Tigreal in the current season?</div><div class="small">Question · 3 answers</div></div></div>
+  </div>
+  <div class="note">
+    <p>Games and ranks come first (as you chose), then reputation. Other players see the same page without "Edit profile" and with a ⋯ menu to <b>Report user</b>.</p>
+    <p>The real name and year are optional (PRO-01). The student ID number and email are never shown (PRO-04).</p>
+  </div>
+</template>
+
+<template id="edit-profile" data-group="5. Profile & notifications" data-title="Edit profile" data-spec="PRO-01, PRO-03">
+  <div class="top"><span class="icon-btn" data-go="profile"><svg class="i"><use href="#i-x"/></svg></span><span class="title">Edit profile</span><span class="btn primary sm" data-go="profile">Save</span></div>
+  <div class="body">
+    <div class="row" style="gap:14px"><span class="avatar lg"></span><span class="link">Change photo</span></div>
+    <div class="field"><label>Display name</label><div class="input filled">NightOwl</div></div>
+    <div class="field"><label>Bio</label><div class="input filled">Tank main. Chill games after 8 PM.</div></div>
+    <div class="row"><div class="field grow"><label>Department (optional)</label><div class="input filled">Computer Science</div></div><div class="field" style="width:90px"><label>Year</label><div class="input filled">3 ▾</div></div></div>
+    <h3 class="sec">Games</h3>
+    <div class="card" style="cursor:default">
+      <div class="row"><div class="game">MLBB</div><div class="strong grow">Mobile Legends</div><span class="small link" style="color:var(--bad)">Remove</span></div>
+      <div class="field"><label>Player ID (Server)</label><div class="input filled">12345678 (2041)</div></div>
+      <div class="field"><label>Rank</label><div class="input filled">Epic I ▾</div></div>
+      <div class="field"><label>Preferred roles</label><div class="chips"><span class="chip on" data-toggle>Tank</span><span class="chip on" data-toggle>Support</span><span class="chip" data-toggle>Mage</span><span class="chip" data-toggle>Marksman</span><span class="chip" data-toggle>Fighter</span><span class="chip" data-toggle>Assassin</span></div></div>
+    </div>
+    <a class="btn"><svg class="i"><use href="#i-plus"/></svg>Add a game</a>
+  </div>
+  <div class="note"><p>Ranks are self-reported (PRO-03). The rank list and roles come from the games catalogue.</p></div>
+</template>
+
+<template id="notifs" data-group="5. Profile & notifications" data-title="Notifications inbox" data-spec="NOT-01, NOT-02, NOT-04">
+  <div class="top"><span class="icon-btn" data-go="home"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Notifications</span><span class="small link">Mark all read</span></div>
+  <div class="body" style="gap:8px">
+    <h3 class="sec">New</h3>
+    <div class="list-item" data-go="lobby-host" style="border-left:3px solid var(--accent)"><div class="icon-btn"><svg class="i"><use href="#i-users"/></svg></div><div class="grow"><b>Aye_Chan</b> wants to join your Valorant lobby<div class="small">2 min ago</div></div></div>
+    <div class="list-item" data-go="lobby-chat" style="border-left:3px solid var(--accent)"><div class="icon-btn"><svg class="i"><use href="#i-lock"/></svg></div><div class="grow">Lobby code changed in <b>Mobile Legends · Ranked</b><div class="small">15 min ago</div></div></div>
+    <div class="list-item" data-go="question" style="border-left:3px solid var(--accent)"><div class="icon-btn"><svg class="i"><use href="#i-book"/></svg></div><div class="grow"><b>Hnin</b> answered your question<div class="small">1 h ago</div></div></div>
+    <h3 class="sec">Earlier</h3>
+    <div class="list-item" data-go="rate"><div class="icon-btn"><svg class="i"><use href="#i-up"/></svg></div><div class="grow">Rate your teammates from last night's lobby<div class="small">Yesterday</div></div></div>
+    <div class="list-item"><div class="icon-btn"><svg class="i"><use href="#i-shield"/></svg></div><div class="grow">Your report was reviewed. Thanks for keeping Chill Hub friendly.<div class="small">2 days ago</div></div></div>
+    <div class="list-item"><div class="icon-btn"><svg class="i"><use href="#i-check"/></svg></div><div class="grow">Your account was approved. Welcome!<div class="small">1 week ago</div></div></div>
+    <p class="hint" style="text-align:center"><span class="link" data-go="notif-settings">Notification settings</span></p>
+  </div>
+  <div class="note">
+    <p>Opened from the bell on Home. Unread items have an accent bar; tapping one opens the related screen.</p>
+    <p>"Report reviewed" never says what action was taken (MOD-05).</p>
+  </div>
+</template>
+
+<template id="notif-settings" data-group="5. Profile & notifications" data-title="Notification settings" data-spec="NOT-03">
+  <div class="top"><span class="icon-btn" data-go="settings"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Notifications</span></div>
+  <div class="body">
+    <div class="row small" style="justify-content:flex-end;gap:18px;padding-right:6px"><span>Push</span><span>Email</span><span>In-app</span></div>
+    <div class="setting"><div class="grow"><b>Lobbies</b><div class="small">Join requests, accepted/declined, code changes, start reminders, chat</div></div><span class="switch on" data-toggle></span><span class="switch" data-toggle></span><span class="switch on" data-toggle></span></div>
+    <div class="setting"><div class="grow"><b>Knowledge</b><div class="small">Answers to your questions, comments on your guides</div></div><span class="switch on" data-toggle></span><span class="switch" data-toggle></span><span class="switch on" data-toggle></span></div>
+    <div class="setting"><div class="grow"><b>News</b><div class="small">Campus news and patch notes</div></div><span class="switch" data-toggle></span><span class="switch" data-toggle></span><span class="switch on" data-toggle></span></div>
+    <div class="setting" style="opacity:.6"><div class="grow"><b>Account &amp; security</b><div class="small">Approval, password reset, suspensions. Always on</div></div><span class="switch on"></span><span class="switch on"></span><span class="switch on"></span></div>
+    <div class="setting"><div class="grow"><b>Lobby chat messages</b><div class="small">Push for every chat message; off by default</div></div><span class="switch" data-toggle style="margin-right:104px"></span></div>
+  </div>
+  <div class="note"><p>Grouped toggles, with one switch each for Push, Email and In-app (as you chose). Account &amp; security can't be turned off (NOT-03).</p></div>
+</template>
+
+<template id="settings" data-group="5. Profile & notifications" data-title="Settings & account" data-spec="ACC-07, ACC-10, NFR-12">
+  <div class="top"><span class="icon-btn" data-go="profile"><svg class="i"><use href="#i-back"/></svg></span><span class="title">Settings</span></div>
+  <div class="body" style="gap:8px">
+    <div class="list-item" data-go="notif-settings"><svg class="i"><use href="#i-bell"/></svg><span class="grow">Notifications</span>›</div>
+    <div class="list-item"><svg class="i"><use href="#i-eye"/></svg><span class="grow">Appearance</span><span class="small">Dark ▾</span></div>
+    <div class="list-item"><svg class="i"><use href="#i-lock"/></svg><span class="grow">Change password</span>›</div>
+    <div class="list-item"><svg class="i"><use href="#i-shield"/></svg><span class="grow">Privacy policy &amp; terms</span>›</div>
+    <div class="list-item"><svg class="i"><use href="#i-flag"/></svg><span class="grow">My reports</span>›</div>
+    <div class="spacer"></div>
+    <a class="btn" data-go="welcome">Log out</a>
+    <a class="btn ghost" style="color:var(--bad)">Delete my account</a>
+    <p class="hint" style="text-align:center">Deleting removes your personal data. Your posts stay as "Deleted user".</p>
+  </div>
+  <div class="note"><p>Dark mode is the default (NFR-12). Delete account asks for the password and a confirmation first (ACC-10).</p></div>
+</template>
+
+<template id="report" data-group="5. Profile & notifications" data-title="Report (any content)" data-spec="MOD-01">
+  <div class="top"><span class="icon-btn" data-go="lobby-pub"><svg class="i"><use href="#i-x"/></svg></span><span class="title">Report lobby</span></div>
+  <div class="body">
+    <p class="sub">Valorant · Unrated · host Rex_09. What's wrong?</p>
+    <div class="choice" data-toggle="one"><span class="radio"></span><span>Fake lobby or wrong code</span></div>
+    <div class="choice on" data-toggle="one"><span class="radio"></span><span>Toxic or abusive behaviour</span></div>
+    <div class="choice" data-toggle="one"><span class="radio"></span><span>Cheating or account sharing</span></div>
+    <div class="choice" data-toggle="one"><span class="radio"></span><span>Spam or advertising</span></div>
+    <div class="choice" data-toggle="one"><span class="radio"></span><span>Something else</span></div>
+    <div class="field"><label>Add details (optional)</label><div class="input" style="height:70px;align-items:flex-start;padding-top:10px">What happened?</div></div>
+    <div class="spacer"></div>
+    <a class="btn primary" data-go="lobby-pub">Send report</a>
+    <p class="hint" style="text-align:center">The person you report won't know it was you.</p>
+  </div>
+  <div class="note"><p>One report screen is reused for users, lobbies, chat messages, posts, answers and comments; only the title and reasons change (MOD-01).</p></div>
+</template>
+<template id="admin" data-group="6. Admin panel (desktop)" data-title="Admin dashboard" data-spec="ADM-01, ADM-07" data-frame="desktop">
+  <div class="admin"><nav class="anav"></nav><div class="amain">
+    <div class="row between"><h2>Good afternoon, Thiri</h2><span class="small">Wed 15 Oct · data updates live</span></div>
+    <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+      <div class="panel" style="border-color:var(--warn)"><div class="row"><svg class="i" style="color:var(--warn)"><use href="#i-check"/></svg><h4 class="grow">7 sign-ups waiting</h4></div><span class="small">Oldest: 19 hours ago</span><a class="btn primary sm" data-go="admin-approvals" style="align-self:flex-start">Review sign-ups</a></div>
+      <div class="panel" style="border-color:var(--warn)"><div class="row"><svg class="i" style="color:var(--warn)"><use href="#i-flag"/></svg><h4 class="grow">3 open reports</h4></div><span class="small">1 marked "toxic behaviour"</span><a class="btn primary sm" data-go="admin-reports" style="align-self:flex-start">Open queue</a></div>
+      <div class="panel"><div class="row"><svg class="i"><use href="#i-users"/></svg><h4 class="grow">2 players flagged for no-shows</h4></div><span class="small">Over the 20% threshold</span><a class="btn sm" data-go="admin-users" style="align-self:flex-start">View players</a></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="small">Approved users</span><b>1,284</b><span class="small" style="color:var(--ok)">+42 this week</span></div>
+      <div class="stat"><span class="small">Pending approvals</span><b>7</b></div>
+      <div class="stat"><span class="small">Active lobbies now</span><b>36</b></div>
+      <div class="stat"><span class="small">Posts this week</span><b>58</b></div>
+      <div class="stat"><span class="small">Open reports</span><b>3</b></div>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h4>Lobbies created per day (last 30 days)</h4><div class="ph" style="height:180px">Line chart</div></div>
+      <div class="panel"><h4>Lobbies by game</h4><div class="ph" style="height:180px">Bar chart: Valorant, MLBB, PUBG M, EA FC…</div></div>
+    </div>
+  </div></div>
+  <div class="note">
+    <p>Desktop web only. The dashboard leads with <b>to-do cards</b> (as you chose), then the stats from ADM-07, then simple charts.</p>
+    <p>The left menu changes by role: Moderators see Reports, Users and the audit log; Organizers see Tournaments (Phase 2); Admins see everything (ADM-01).</p>
+  </div>
+</template>
+
+<template id="admin-approvals" data-group="6. Admin panel (desktop)" data-title="Approval queue" data-spec="ACC-03, ACC-04, ACC-08, ADM-02" data-frame="desktop">
+  <div class="admin"><nav class="anav"></nav><div class="amain">
+    <div class="row between"><h2>Sign-up approvals</h2><div class="seg" style="width:280px"><span class="on" data-toggle>Pending 7</span><span data-toggle>Approved</span><span data-toggle>Rejected</span></div></div>
+    <div class="split">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="qitem sel"><span class="avatar" style="width:32px;height:32px"></span><div class="grow"><b>Aung Ko Ko</b><div class="small">aungkoko@yourcollege.edu · 19 h ago</div></div></div>
+        <div class="qitem"><span class="avatar" style="width:32px;height:32px"></span><div class="grow"><b>Ei Mon</b><div class="small">eimon@yourcollege.edu · 6 h ago</div></div><span class="chip">Re-applied</span></div>
+        <div class="qitem"><span class="avatar" style="width:32px;height:32px"></span><div class="grow"><b>Zin Min</b><div class="small">zinmin@yourcollege.edu · 2 h ago</div></div></div>
+        <div class="qitem"><span class="avatar" style="width:32px;height:32px"></span><div class="grow"><b>Htet Aung</b><div class="small">htet.a@yourcollege.edu · 40 min ago</div></div></div>
+        <p class="hint">Oldest first, so nobody waits too long.</p>
+      </div>
+      <div class="panel">
+        <div class="row"><h4 class="grow" style="font-size:16px;white-space:nowrap">Aung Ko Ko</h4><span class="chip ok">✓ Email verified</span><span class="chip ok">✓ College domain</span><span class="chip ok">✓ Student ID not used before</span></div>
+        <div class="grid2">
+          <div class="ph" style="height:230px;flex-direction:column;display:flex;gap:6px">Student ID photo<br><span class="small">Click to zoom · rotate</span></div>
+          <dl class="kv" style="align-content:start"><dt>Full name</dt><dd>Aung Ko Ko</dd><dt>Student ID no.</dt><dd>CS-2023-0418</dd><dt>Email</dt><dd>aungkoko@yourcollege.edu</dd><dt>Submitted</dt><dd>14 Oct, 2:14 PM</dd><dt>In-game IDs</dt><dd>Valorant: NightOwl#MM01<br>MLBB: 12345678 (2041)</dd></dl>
+        </div>
+        <div class="banner info"><svg class="i"><use href="#i-shield"/></svg><span>The ID photo is deleted automatically 30 days after your decision. Only the result, reviewer and date are kept.</span></div>
+        <div class="field"><label>Rejection reason (shown to the student)</label><div class="row"><div class="input filled" style="width:240px">Photo unreadable ▾</div><div class="input grow">Add a note…</div></div></div>
+        <div class="row"><span class="spacer"></span><a class="btn sm" style="color:var(--bad);border-color:var(--bad)">Reject</a><a class="btn primary sm">Approve</a></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="note">
+    <p>Queue on the left, the selected request on the right. Automatic checks are shown as green chips so the admin only has to compare the photo with the typed details.</p>
+    <p>A reason is required to reject; ready-made reasons (photo unreadable, not our college, details don't match) save time.</p>
+  </div>
+</template>
+
+<template id="admin-reports" data-group="6. Admin panel (desktop)" data-title="Moderation queue" data-spec="MOD-02 to MOD-05, ADM-04" data-frame="desktop">
+  <div class="admin"><nav class="anav"></nav><div class="amain">
+    <div class="row between"><h2>Reports</h2><div class="seg" style="width:300px"><span class="on" data-toggle>Open 3</span><span data-toggle>Dismissed</span><span data-toggle>Actioned</span></div></div>
+    <table class="t">
+      <tr><th>Type</th><th>Reported</th><th>Reason</th><th>Reports</th><th>Age</th><th></th></tr>
+      <tr class="sel"><td><span class="chip">Chat message</span></td><td>Phyo</td><td>Toxic or abusive behaviour</td><td>2</td><td>35 min</td><td class="link">Review</td></tr>
+      <tr><td><span class="chip">Lobby</span></td><td>fake_host22</td><td>Fake lobby or wrong code</td><td>4</td><td>2 h</td><td class="link">Review</td></tr>
+      <tr><td><span class="chip">Guide</span></td><td>"Free skins here!!"</td><td>Spam or advertising</td><td>1</td><td>5 h</td><td class="link">Review</td></tr>
+    </table>
+    <div class="grid2" style="grid-template-columns:1.3fr 1fr">
+      <div class="panel">
+        <h4>Reported message, with context</h4>
+        <div style="display:flex;flex-direction:column;gap:6px;background:var(--fill2);border-radius:8px;padding:10px">
+          <div class="msg"><div class="who">Su</div>gg, we lost that round</div>
+          <div class="msg" style="border:2px solid var(--bad)"><div class="who">Phyo · reported</div>[offensive message text]</div>
+          <div class="msg"><div class="who">Min Thant</div>chill bro</div>
+        </div>
+        <span class="small">Lobby: Valorant · Competitive · 14 Oct, 10:12 PM · reported by Su, Min Thant</span>
+      </div>
+      <div class="panel">
+        <h4>Phyo · history</h4>
+        <dl class="kv"><dt>Past warnings</dt><dd>1 (Sept)</dd><dt>Suspensions</dt><dd>0</dd><dt>No-show rate</dt><dd style="color:var(--warn)">18%</dd></dl>
+        <div class="field"><label>Action</label>
+          <div class="chips"><span class="chip" data-toggle="one">Dismiss</span><span class="chip on" data-toggle="one">Hide message</span><span class="chip" data-toggle="one">Warn user</span><span class="chip" data-toggle="one">Suspend 1 · 3 · 7 · 30 days ▾</span><span class="chip" data-toggle="one" title="Admins only">Ban (admin)</span></div></div>
+        <div class="field"><label>Reason for the audit log *</label><div class="input">Required</div></div>
+        <div class="row"><span class="spacer"></span><a class="btn primary sm">Apply action</a></div>
+        <span class="hint">Reporters get "Your report was reviewed", with no details.</span>
+      </div>
+    </div>
+  </div></div>
+  <div class="note">
+    <p>Reports about the same item are grouped (the "Reports" column), so a burst of reports is one task.</p>
+    <p>The moderator sees the reported content in context plus the user's history before choosing an action. Suspensions use fixed lengths (1, 3, 7 or 30 days) so moderators punish consistently. Every action needs a reason and goes into the audit log (MOD-04). Ban is admin-only (MOD-03).</p>
+  </div>
+</template>
+
+<template id="admin-users" data-group="6. Admin panel (desktop)" data-title="User management" data-spec="ADM-03, ACC-09, REP-04" data-frame="desktop">
+  <div class="admin"><nav class="anav"></nav><div class="amain">
+    <h2>Users</h2>
+    <div class="toolbar"><div class="input" style="width:320px"><svg class="i"><use href="#i-search"/></svg>Search name, email, student ID, in-game ID</div>
+      <div class="input filled">Role: All ▾</div><div class="input filled">Status: All ▾</div><span class="chip warn" data-toggle>No-show flag</span></div>
+    <table class="t">
+      <tr><th>User</th><th>Email</th><th>Roles</th><th>Status</th><th>👍</th><th>No-show</th><th>Joined</th><th></th></tr>
+      <tr><td><b>NightOwl</b><br><span class="small">Aung Ko Ko</span></td><td>aungkoko@yourcollege.edu</td><td><span class="chip">Player</span></td><td><span class="chip ok">Approved</span></td><td>46</td><td>2%</td><td>8 Oct</td><td class="link">Open</td></tr>
+      <tr class="sel"><td><b>Phyo</b><br><span class="small">Phyo Wai</span></td><td>phyo.w@yourcollege.edu</td><td><span class="chip">Player</span></td><td><span class="chip ok">Approved</span></td><td>9</td><td style="color:var(--warn);font-weight:700">18%</td><td>2 Sep</td><td class="link">Open</td></tr>
+      <tr><td><b>Hnin</b><br><span class="small">Hnin Wai</span></td><td>hnin@yourcollege.edu</td><td><span class="chip">Player</span> <span class="chip accent">Moderator</span></td><td><span class="chip ok">Approved</span></td><td>44</td><td>0%</td><td>1 Sep</td><td class="link">Open</td></tr>
+      <tr><td><b>Kaze</b><br><span class="small">Kaung Zaw</span></td><td>kaze@yourcollege.edu</td><td><span class="chip">Player</span> <span class="chip accent">Organizer</span></td><td><span class="chip warn">Suspended to 20 Oct</span></td><td>63</td><td>21%</td><td>28 Aug</td><td class="link">Open</td></tr>
+    </table>
+    <div class="panel" style="max-width:560px">
+      <h4>Phyo · roles &amp; status</h4>
+      <div class="chips"><span class="chip on" data-toggle>Player</span><span class="chip" data-toggle>Moderator</span><span class="chip" data-toggle>Tournament Organizer</span><span class="chip" data-toggle>Admin</span></div>
+      <div class="row"><a class="btn sm">Warn</a><a class="btn sm">Suspend: 1 · 3 · 7 · 30 days ▾</a><a class="btn sm" style="color:var(--bad);border-color:var(--bad)">Ban</a><span class="spacer"></span><span class="small link">View reports &amp; audit history</span></div>
+    </div>
+  </div></div>
+  <div class="note">
+    <p>Search covers name, email, student ID and in-game IDs. The "No-show flag" filter lists players over the admin-set threshold (REP-04).</p>
+    <p>Only admins can change roles or ban; moderators see this page read-only, apart from warn and suspend.</p>
+  </div>
+</template>
+
+<template id="admin-games" data-group="6. Admin panel (desktop)" data-title="Games catalogue" data-spec="GAM-01 to GAM-03, ADM-05" data-frame="desktop">
+  <div class="admin"><nav class="anav"></nav><div class="amain">
+    <div class="row between"><h2>Games catalogue</h2><a class="btn primary sm"><svg class="i"><use href="#i-plus"/></svg>Add game</a></div>
+    <div class="split" style="grid-template-columns:280px 1fr">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="qitem sel"><div class="game">VAL</div><div class="grow"><b>Valorant</b><div class="small">PC · 5 per team · active</div></div></div>
+        <div class="qitem"><div class="game">MLBB</div><div class="grow"><b>Mobile Legends</b><div class="small">Mobile · 5 per team · active</div></div></div>
+        <div class="qitem"><div class="game">PUBG</div><div class="grow"><b>PUBG Mobile</b><div class="small">Mobile · 4 per squad · active</div></div></div>
+        <div class="qitem" style="opacity:.6"><div class="game">FC</div><div class="grow"><b>EA FC</b><div class="small">Console/PC · 1v1 · hidden</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="row"><div class="ph" style="width:56px;height:56px">Icon</div><div class="grow field"><label>Name</label><div class="input filled">Valorant</div></div><div class="setting" style="align-self:flex-end"><span>Active</span><span class="switch on" data-toggle></span></div></div>
+        <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+          <div class="field"><label>Platforms</label><div class="input filled">PC ▾</div></div>
+          <div class="field"><label>Team / lobby size</label><div class="input filled">5</div></div>
+          <div class="field"><label>In-game ID label</label><div class="input filled">Riot ID (name#tag)</div></div>
+        </div>
+        <div class="field"><label>Ranks (lowest to highest, drag to reorder)</label><div class="chips"><span class="chip">⋮⋮ Iron</span><span class="chip">⋮⋮ Bronze</span><span class="chip">⋮⋮ Silver</span><span class="chip">⋮⋮ Gold</span><span class="chip">⋮⋮ Platinum</span><span class="chip">⋮⋮ Diamond</span><span class="chip">⋮⋮ Ascendant</span><span class="chip">⋮⋮ Immortal</span><span class="chip">⋮⋮ Radiant</span><span class="chip accent">+ Add</span></div></div>
+        <div class="field"><label>Player roles</label><div class="chips"><span class="chip">Duelist ×</span><span class="chip">Controller ×</span><span class="chip">Initiator ×</span><span class="chip">Sentinel ×</span><span class="chip">IGL ×</span><span class="chip accent">+ Add</span></div></div>
+        <div class="field"><label>Game modes</label><div class="chips"><span class="chip">Competitive ×</span><span class="chip">Unrated ×</span><span class="chip">Swiftplay ×</span><span class="chip">Custom 5v5 ×</span><span class="chip accent">+ Add</span></div></div>
+        <div class="row"><span class="spacer"></span><a class="btn sm">Cancel</a><a class="btn primary sm">Save changes</a></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="note">
+    <p>Everything players pick from (ranks, roles, modes, the in-game ID label and lobby size) is set here, so a new game needs no code change (GAM-02).</p>
+    <p>Hiding a game keeps old lobbies and posts but removes it from pickers.</p>
+  </div>
+</template>
+
+<template id="admin-settings" data-group="6. Admin panel (desktop)" data-title="Settings & audit log" data-spec="ADM-06, MOD-04" data-frame="desktop">
+  <div class="admin"><nav class="anav"></nav><div class="amain">
+    <h2>Settings</h2>
+    <div class="grid2">
+      <div class="panel">
+        <h4>Sign-up</h4>
+        <div class="field"><label>Allowed email domains</label><div class="chips"><span class="chip">@yourcollege.edu ×</span><span class="chip">@student.yourcollege.edu ×</span><span class="chip accent">+ Add</span></div></div>
+        <div class="field"><label>Delete ID photos after (days)</label><div class="input filled" style="width:120px">30</div></div>
+      </div>
+      <div class="panel">
+        <h4>Lobbies &amp; reputation</h4>
+        <div class="grid2">
+          <div class="field"><label>Lobby expires after start (hours)</label><div class="input filled">2</div></div>
+          <div class="field"><label>Max active lobbies per player</label><div class="input filled">3</div></div>
+          <div class="field"><label>Delete lobby chat after (days)</label><div class="input filled">7</div></div>
+          <div class="field"><label>No-show flag threshold (%)</label><div class="input filled">20</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="row"><span class="spacer"></span><a class="btn primary sm">Save settings</a></div>
+    <h2 style="font-size:17px">Audit log</h2>
+    <table class="t">
+      <tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Reason</th></tr>
+      <tr><td>Today 3:02 PM</td><td>Hnin (Mod)</td><td>Hide message</td><td>Phyo</td><td>Abusive language in lobby chat</td></tr>
+      <tr><td>Today 11:40 AM</td><td>Thiri (Admin)</td><td>Approve sign-up</td><td>Zaw Lin</td><td>—</td></tr>
+      <tr><td>Yesterday</td><td>Thiri (Admin)</td><td>Change setting</td><td>No-show threshold 25 → 20</td><td>Too many no-shows this month</td></tr>
+      <tr><td>13 Oct</td><td>Hnin (Mod)</td><td>Suspend 7 days</td><td>Kaze</td><td>Repeated no-shows + toxic chat</td></tr>
+    </table>
+  </div></div>
+  <div class="note">
+    <p>All limits from the spec are editable here (ADM-06) instead of being fixed in code.</p>
+    <p>The audit log records every moderation action and every settings change, with who, what, when and why (MOD-04).</p>
+  </div>
+</template>
+
+<script>
+  const TABS = [
+    ["home", "Home", "i-home"], ["lobbies", "Lobbies", "i-users"], ["create1", "Create", "i-plus"],
+    ["knowledge", "Knowledge", "i-book"], ["profile", "Profile", "i-user"],
+  ];
+  const ANAV = `
+    <div class="brand"><div class="ph" style="width:26px;height:26px;border-radius:6px;font-size:8px">Logo</div>Chill Hub Admin</div>
+    <a data-go="admin"><svg class="i"><use href="#i-home"/></svg>Dashboard</a>
+    <a data-go="admin-approvals"><svg class="i"><use href="#i-check"/></svg>Approvals<span class="chip warn">7</span></a>
+    <a data-go="admin-reports"><svg class="i"><use href="#i-flag"/></svg>Reports<span class="chip warn">3</span></a>
+    <a data-go="admin-users"><svg class="i"><use href="#i-users"/></svg>Users</a>
+    <a data-go="admin-games"><svg class="i"><use href="#i-book"/></svg>Games catalogue</a>
+    <a class="off" title="Uses the same editor as the app"><svg class="i"><use href="#i-mail"/></svg>News posts</a>
+    <a data-go="admin-settings"><svg class="i"><use href="#i-shield"/></svg>Settings &amp; audit log</a>
+    <a class="off"><svg class="i"><use href="#i-up"/></svg>Tournaments · Phase 2</a>
+    <div class="who">Signed in as <b>Thiri (Admin)</b><br>Moderators only see Reports, Users and the audit log.</div>`;
+  const screens = [...document.querySelectorAll("template")];
+  const side = document.getElementById("side"), pick = document.getElementById("pick");
+  let group = null;
+  for (const t of screens) {
+    if (t.dataset.group !== group) {
+      group = t.dataset.group;
+      side.insertAdjacentHTML("beforeend", `<h2>${group}</h2>`);
+      pick.insertAdjacentHTML("beforeend", `<optgroup label="${group}"></optgroup>`);
+    }
+    const todo = t.dataset.todo ? " todo" : "";
+    side.insertAdjacentHTML("beforeend", `<a href="#${t.id}" class="${todo}" data-id="${t.id}">${t.dataset.title}</a>`);
+    if (!todo) pick.lastElementChild.insertAdjacentHTML("beforeend", `<option value="${t.id}">${t.dataset.title}</option>`);
+  }
+
+  function show(id) {
+    const t = document.getElementById(id);
+    if (!t || t.tagName !== "TEMPLATE") return show("welcome");
+    const frag = t.content.cloneNode(true);
+    const note = frag.querySelector(".note");
+    if (note) note.remove();
+    const screen = document.getElementById("screen");
+    const phone = document.querySelector(".phone"), status = phone.querySelector(".status");
+    const desktop = t.dataset.frame === "desktop";
+    phone.classList.toggle("desktop", desktop);
+    status.innerHTML = desktop
+      ? `<span>● ● ●</span><span class="url">https://chillhub.app/admin/${id.replace("admin-", "").replace("admin", "dashboard")}</span>`
+      : `<span>9:41</span><span>●●● ▮</span>`;
+    screen.replaceChildren(frag);
+    screen.scrollTop = 0;
+    screen.querySelectorAll(".anav").forEach(n => (n.innerHTML = ANAV));
+    screen.querySelectorAll(".anav a[data-go]").forEach(a => a.classList.toggle("on", a.dataset.go === id));
+    screen.querySelectorAll(".lc").forEach(renderLobbyCard);
+    if (t.dataset.todo) {
+      screen.insertAdjacentHTML("beforeend", `<div class="body center"><div class="spacer"></div><div class="ph" style="width:100%;height:220px">${t.dataset.title}<br>coming in the next batch</div><div class="spacer"></div></div>`);
+    }
+    if (t.dataset.tab) {
+      screen.parentElement.querySelector(".tabs")?.remove();
+      screen.insertAdjacentHTML("afterend", `<nav class="tabs">${TABS.map(([sid, label, ic]) =>
+        `<a data-go="${sid}" class="${sid === "create1" ? "fab" : ""} ${sid === t.dataset.tab ? "on" : ""}">${
+          sid === "create1" ? `<span><svg class="i"><use href="#${ic}"/></svg></span>` : `<svg class="i"><use href="#${ic}"/></svg>`}${label}</a>`).join("")}</nav>`);
+    } else {
+      document.querySelector(".phone .tabs")?.remove();
+    }
+    document.getElementById("notes").innerHTML =
+      `<h3>${t.dataset.title}</h3><div class="spec">${t.dataset.spec || ""}</div>${note ? note.innerHTML : "<p>Not designed yet.</p>"}`;
+    side.querySelectorAll("a").forEach(a => a.classList.toggle("on", a.dataset.id === id));
+    pick.value = id;
+  }
+  // Lobby card: game, mode & slots · start time · rank & roles · host & reputation
+  function renderLobbyCard(el) {
+    const d = el.dataset;
+    const [have, total] = d.slots.split("/").map(Number);
+    const dots = Array.from({ length: total }, (_, i) => `<i class="${i < have ? "" : "e"}"></i>`).join("");
+    const roles = (d.roles || "").split(",").filter(Boolean)
+      .map((r, i) => `<span class="chip accent">${i === 0 ? "Need: " : ""}${r}</span>`).join("");
+    const rep = d.noshow ? `<span class="chip warn">${d.noshow} no-shows</span>`
+      : `<span class="chip ok"><svg class="i" style="width:13px;height:13px"><use href="#i-up"/></svg>${d.rep}</span>`;
+    el.classList.add("card");
+    el.innerHTML = `
+      <div class="row"><div class="game">${d.g}</div><div class="grow"><div class="strong">${d.name}</div>
+        <div class="small"><svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-clock"/></svg> ${d.time}</div></div>
+        ${d.lock ? `<svg class="i" style="color:var(--muted)"><use href="#i-lock"/></svg>` : ""}
+        <span class="slots">${dots}</span><span class="small">${have}/${total}</span></div>
+      <div class="chips"><span class="chip">${d.rank}</span>${roles}</div>
+      <div class="row"><span class="avatar"></span><span class="small grow">Host <b style="color:var(--ink)">${d.host}</b></span>${rep}</div>`;
+  }
+  // Simple demo toggles: chips, segmented controls, switches
+  document.addEventListener("click", e => {
+    const t = e.target.closest("[data-toggle]");
+    if (!t) return;
+    if (t.parentElement.classList.contains("seg") || t.dataset.toggle === "one") {
+      t.parentElement.querySelectorAll("[data-toggle]").forEach(x => x.classList.remove("on"));
+      t.classList.add("on");
+    } else t.classList.toggle("on");
+  });
+
+  // Navigate without relying on hashchange (it does not fire in every preview/viewer)
+  function go(id) {
+    show(id);
+    try { history.replaceState(null, "", "#" + id); } catch (_) {}
+  }
+  document.addEventListener("click", e => {
+    const el = e.target.closest("[data-go], .side a[data-id]");
+    if (el) { e.preventDefault(); go(el.dataset.go || el.dataset.id); }
+  });
+  pick.onchange = () => go(pick.value);
+  window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+  show(location.hash.slice(1) || "welcome");
+</script>
+</body>
+</html>

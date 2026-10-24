@@ -1,0 +1,548 @@
+// Chill Hub database schema: MVP-1 (increment 1).
+// Covers accounts & approval, profiles, games catalogue, lobbies, lobby chat, ratings and notifications.
+// Knowledge sharing, moderation and tournaments are added in later increments.
+// Conventions (see docs/database/README.md): PascalCase models / camelCase fields in code,
+// snake_case tables and columns in PostgreSQL, text IDs (UUID strings), timestamps in UTC.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// Enums
+// ============================================================
+
+enum UserStatus {
+  pending
+  approved
+  rejected
+  suspended
+  banned
+
+  @@map("user_status")
+}
+
+enum RoleName {
+  player
+  moderator
+  organizer
+  admin
+
+  @@map("role_name")
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+
+  @@map("approval_status")
+}
+
+enum DevicePlatform {
+  ios
+  android
+  web
+
+  @@map("device_platform")
+}
+
+enum LobbyVisibility {
+  public
+  private
+
+  @@map("lobby_visibility")
+}
+
+enum LobbyStatus {
+  open
+  full
+  in_progress
+  closed
+  expired
+
+  @@map("lobby_status")
+}
+
+enum JoinRequestStatus {
+  pending
+  accepted
+  declined
+  cancelled
+
+  @@map("join_request_status")
+}
+
+enum ChatMessageKind {
+  user
+  system
+
+  @@map("chat_message_kind")
+}
+
+enum RatingValue {
+  good
+  no_show
+
+  @@map("rating_value")
+}
+
+enum NotificationGroup {
+  account
+  lobbies
+  lobby_chat
+  knowledge
+  news
+
+  @@map("notification_group")
+}
+
+enum NotificationType {
+  account_approved
+  account_rejected
+  join_request_received
+  join_request_accepted
+  join_request_declined
+  lobby_member_joined
+  lobby_member_left
+  lobby_code_changed
+  lobby_starting_soon
+  lobby_closed
+  rate_teammates
+  chat_message
+
+  @@map("notification_type")
+}
+
+// ============================================================
+// Accounts & authentication
+// User, Session, Account and Verification follow the Better Auth Prisma adapter's
+// model and field names; extra columns on User are Better Auth "additionalFields".
+// ============================================================
+
+model User {
+  id              String     @id @default(uuid())
+  name            String // full (real) name
+  email           String     @unique
+  emailVerified   Boolean    @default(false) @map("email_verified")
+  image           String?
+  studentIdNumber String     @unique @map("student_id_number")
+  status          UserStatus @default(pending)
+  suspendedUntil  DateTime?  @map("suspended_until")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+
+  sessions                Session[]
+  accounts                Account[]
+  profile                 Profile?
+  roles                   UserRole[]               @relation("UserRoles")
+  rolesGranted            UserRole[]               @relation("RoleGrantedBy")
+  approvalRequests        ApprovalRequest[]        @relation("ApprovalApplicant")
+  approvalsReviewed       ApprovalRequest[]        @relation("ApprovalReviewer")
+  inGameAccounts          InGameAccount[]
+  hostedLobbies           Lobby[]
+  lobbyMemberships        LobbyMember[]
+  joinRequests            LobbyJoinRequest[]
+  chatMessages            ChatMessage[]
+  ratingsGiven            Rating[]                 @relation("RatingRater")
+  ratingsReceived         Rating[]                 @relation("RatingRatee")
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+  pushTokens              PushToken[]
+  settingsUpdated         Setting[]
+
+  @@index([status])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Login methods for a user. For email + password, providerId = "credential" and password holds the hash.
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+// Email verification codes and password reset tokens.
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model UserRole {
+  userId      String   @map("user_id")
+  role        RoleName
+  grantedById String?  @map("granted_by")
+  grantedAt   DateTime @default(now()) @map("granted_at")
+
+  user      User  @relation("UserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("RoleGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@id([userId, role])
+  @@map("user_roles")
+}
+
+// Admin review of a sign-up (ACC-03, ACC-04). The ID photo upload arrives in a later increment.
+model ApprovalRequest {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+  status         ApprovalStatus @default(pending)
+  idPhotoKey     String?        @map("id_photo_key")
+  rejectReason   String?        @map("reject_reason")
+  reviewedById   String?        @map("reviewed_by")
+  reviewedAt     DateTime?      @map("reviewed_at")
+  photoDeletedAt DateTime?      @map("photo_deleted_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  user       User  @relation("ApprovalApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ApprovalReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@map("approval_requests")
+}
+
+// ============================================================
+// Profiles
+// ============================================================
+
+model Profile {
+  userId      String   @id @map("user_id")
+  displayName String   @unique @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  bio         String?
+  year        Int?
+  department  String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model InGameAccount {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  gameId     String   @map("game_id")
+  inGameName String   @map("in_game_name")
+  rankId     String?  @map("rank_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game           Game                @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  rank           GameRank?           @relation(fields: [rankId], references: [id], onDelete: SetNull)
+  preferredRoles InGameAccountRole[]
+
+  @@unique([userId, gameId])
+  @@index([gameId])
+  @@map("in_game_accounts")
+}
+
+model InGameAccountRole {
+  inGameAccountId String @map("in_game_account_id")
+  gameRoleId      String @map("game_role_id")
+
+  inGameAccount InGameAccount @relation(fields: [inGameAccountId], references: [id], onDelete: Cascade)
+  gameRole      GameRole      @relation(fields: [gameRoleId], references: [id], onDelete: Cascade)
+
+  @@id([inGameAccountId, gameRoleId])
+  @@map("in_game_account_roles")
+}
+
+// ============================================================
+// Games catalogue (managed by admins, GAM-01 to GAM-03)
+// ============================================================
+
+model Game {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  name          String   @unique
+  iconUrl       String?  @map("icon_url")
+  platforms     String[]
+  teamSize      Int      @map("team_size")
+  maxLobbySize  Int      @map("max_lobby_size")
+  inGameIdLabel String   @map("in_game_id_label")
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  ranks          GameRank[]
+  roles          GameRole[]
+  modes          GameMode[]
+  inGameAccounts InGameAccount[]
+  lobbies        Lobby[]
+
+  @@map("games")
+}
+
+model GameRank {
+  id        String @id @default(uuid())
+  gameId    String @map("game_id")
+  name      String
+  tierOrder Int    @map("tier_order") // 1 = lowest
+
+  game           Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  inGameAccounts InGameAccount[]
+  lobbiesMin     Lobby[]         @relation("LobbyMinRank")
+  lobbiesMax     Lobby[]         @relation("LobbyMaxRank")
+
+  @@unique([gameId, name])
+  @@unique([gameId, tierOrder])
+  @@map("game_ranks")
+}
+
+model GameRole {
+  id     String @id @default(uuid())
+  gameId String @map("game_id")
+  name   String
+
+  game             Game                @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  inGameAccounts   InGameAccountRole[]
+  lobbyNeededRoles LobbyNeededRole[]
+
+  @@unique([gameId, name])
+  @@map("game_roles")
+}
+
+model GameMode {
+  id     String @id @default(uuid())
+  gameId String @map("game_id")
+  name   String
+
+  game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  lobbies Lobby[]
+
+  @@unique([gameId, name])
+  @@map("game_modes")
+}
+
+// ============================================================
+// Lobbies (LOB-01 to LOB-13)
+// ============================================================
+
+model Lobby {
+  id         String          @id @default(uuid())
+  hostId     String          @map("host_id")
+  gameId     String          @map("game_id")
+  modeId     String          @map("mode_id")
+  // In-game party code; required (LOB-02). Only sent to members for private lobbies (NFR-06).
+  lobbyCode  String          @map("lobby_code")
+  visibility LobbyVisibility
+  capacity   Int // total players including the host
+  minRankId  String?         @map("min_rank_id")
+  maxRankId  String?         @map("max_rank_id")
+  voiceChat  Boolean         @default(false) @map("voice_chat")
+  startsAt   DateTime        @map("starts_at")
+  note       String?
+  status     LobbyStatus     @default(open)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  closedAt   DateTime?       @map("closed_at")
+
+  host         User               @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  game         Game               @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  mode         GameMode           @relation(fields: [modeId], references: [id], onDelete: Restrict)
+  minRank      GameRank?          @relation("LobbyMinRank", fields: [minRankId], references: [id], onDelete: SetNull)
+  maxRank      GameRank?          @relation("LobbyMaxRank", fields: [maxRankId], references: [id], onDelete: SetNull)
+  neededRoles  LobbyNeededRole[]
+  members      LobbyMember[]
+  joinRequests LobbyJoinRequest[]
+  messages     ChatMessage[]
+  ratings      Rating[]
+
+  @@index([status, gameId, startsAt]) // browse & filter (LOB-06)
+  @@index([hostId, status]) // active-lobby limit per host (LOB-13)
+  @@map("lobbies")
+}
+
+model LobbyNeededRole {
+  lobbyId    String @map("lobby_id")
+  gameRoleId String @map("game_role_id")
+
+  lobby    Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  gameRole GameRole @relation(fields: [gameRoleId], references: [id], onDelete: Cascade)
+
+  @@id([lobbyId, gameRoleId])
+  @@map("lobby_needed_roles")
+}
+
+// One row per player per lobby, including the host. leftAt is set when a member leaves
+// and cleared if they rejoin.
+model LobbyMember {
+  lobbyId  String    @map("lobby_id")
+  userId   String    @map("user_id")
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  lobby Lobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([lobbyId, userId])
+  @@index([userId, leftAt])
+  @@map("lobby_members")
+}
+
+// One request per player per lobby; asking again after a decline updates the same row.
+model LobbyJoinRequest {
+  id          String            @id @default(uuid())
+  lobbyId     String            @map("lobby_id")
+  userId      String            @map("user_id")
+  status      JoinRequestStatus @default(pending)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  respondedAt DateTime?         @map("responded_at")
+
+  lobby Lobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId, status])
+  @@map("lobby_join_requests")
+}
+
+// Lobby chat (LOB-11). System messages (joins, leaves, code changes) have no sender.
+model ChatMessage {
+  id        String          @id @default(uuid())
+  lobbyId   String          @map("lobby_id")
+  senderId  String?         @map("sender_id")
+  kind      ChatMessageKind @default(user)
+  body      String
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  lobby  Lobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  sender User? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([lobbyId, createdAt])
+  @@map("chat_messages")
+}
+
+// ============================================================
+// Post-match feedback / reputation (REP-01 to REP-04)
+// ============================================================
+
+model Rating {
+  id            String      @id @default(uuid())
+  lobbyId       String      @map("lobby_id")
+  raterId       String      @map("rater_id")
+  rateeId       String      @map("ratee_id")
+  value         RatingValue
+  editableUntil DateTime    @map("editable_until") // created_at + 24 h (REP-03)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  lobby Lobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  rater User  @relation("RatingRater", fields: [raterId], references: [id], onDelete: Cascade)
+  ratee User  @relation("RatingRatee", fields: [rateeId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, raterId, rateeId])
+  @@index([rateeId])
+  @@map("ratings")
+}
+
+// ============================================================
+// Notifications (NOT-01 to NOT-04)
+// ============================================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  body      String
+  data      Json? // e.g. { "lobbyId": "..." } for deep links
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// Grouped toggles per channel (NOT-03). Missing rows mean "use the default for that group".
+model NotificationPreference {
+  userId String            @map("user_id")
+  group  NotificationGroup
+  push   Boolean           @default(true)
+  email  Boolean           @default(false)
+  inApp  Boolean           @default(true) @map("in_app")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, group])
+  @@map("notification_preferences")
+}
+
+model PushToken {
+  id         String         @id @default(uuid())
+  userId     String         @map("user_id")
+  expoToken  String         @unique @map("expo_token")
+  platform   DevicePlatform
+  createdAt  DateTime       @default(now()) @map("created_at")
+  lastUsedAt DateTime?      @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+// ============================================================
+// System settings (ADM-06), key/value
+// ============================================================
+
+model Setting {
+  key         String   @id
+  value       Json
+  updatedById String?  @map("updated_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("settings")
+}

@@ -1,0 +1,22 @@
+{
+  "name": "chill-hub",
+  "private": true,
+  "description": "Chill Hub: college gaming hub (Expo app + web, NestJS API)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:generate": "npm run db:generate -w @chill-hub/api",
+    "db:migrate": "npm run db:migrate -w @chill-hub/api",
+    "db:seed": "npm run db:seed -w @chill-hub/api",
+    "db:studio": "npm run db:studio -w @chill-hub/api",
+    "spec:docx": "node tools/md2docx.js SPEC.md \"Chill Hub - Requirements Specification.docx\""
+  },
+  "devDependencies": {
+    "docx": "^9.5.1"
+  }
+}

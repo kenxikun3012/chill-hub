@@ -1,0 +1,28 @@
+{
+  "name": "@chill-hub/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chill Hub API (NestJS + Prisma + PostgreSQL)",
+  "type": "commonjs",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:validate": "prisma validate"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "dotenv": "^18.0.9",
+    "pg": "^8.23.1",
+    "prisma": "^7.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3"
+  }
+}

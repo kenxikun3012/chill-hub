@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# build output
+dist/
+build/
+.expo/
+web-build/
+apps/api/src/generated/
+
+# logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+~$*.docx
+
+# editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
