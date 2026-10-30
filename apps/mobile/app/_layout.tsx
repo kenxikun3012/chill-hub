@@ -18,8 +18,8 @@ function Routes() {
   }
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
       <Stack.Protected guard={stage === "guest"}>
-        <Stack.Screen name="index" />
         <Stack.Screen name="sign-up" />
         <Stack.Screen name="verify-email" />
         <Stack.Screen name="log-in" />
@@ -35,8 +35,13 @@ function Routes() {
       <Stack.Protected guard={stage === "pending"}>
         <Stack.Screen name="pending" />
       </Stack.Protected>
+      <Stack.Protected guard={stage === "setup"}>
+        <Stack.Screen name="setup-profile" />
+      </Stack.Protected>
       <Stack.Protected guard={stage === "approved"}>
-        <Stack.Screen name="home" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="players/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={isAdmin}>
         <Stack.Screen name="admin" />

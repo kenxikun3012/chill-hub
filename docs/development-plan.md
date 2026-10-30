@@ -11,7 +11,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 | 1 | **Database**: MVP-1 schema, first migration, seed data, database docs | ✅ Done (2026-10-24): applied and seeded on the Neon `dev` branch |
 | 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
 | 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | ✅ Built (2026-10-30): API, app screens and admin queue. See the [plan below](#step-3a-plan-authentication) |
-| 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ⬜ |
+| 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ✅ Built (2026-10-30): initials instead of photos for now |
 | 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |
 | 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ⬜ |
 | 3e | **Post-match feedback**: rating screen, reputation on profiles | ⬜ |
@@ -73,9 +73,13 @@ Differences from the wireframes: no ID photo yet, and the student ID number's un
 - Before production only: a Resend account and a domain to send from, plus the real college email domain.
 - A Neon `dev` branch, so test runs stop wiping development data.
 
+## Step 3b decisions
+
+Decided 2026-10-30. A display name is chosen on a required screen at the first login after approval. Approved players get bottom tabs (Home and Profile for now). `/` is the entry point: the welcome page for guests, a redirect to the right screen for everyone else. Avatars are initials until file storage arrives. `/players/:id` shows other players' public profiles and reputation, ready for step 3c to link to; "Report user" waits for moderation.
+
 ## Later increments (from the spec)
 
-- ID photo upload with 30-day deletion (ACC-08)
+- ID photo upload with 30-day deletion (ACC-08), and profile photos (PRO-01), once file storage is set up
 - Knowledge sharing: guides, Q&A, news
 - Reporting and moderation queue, audit log
 - Admin panel: dashboard, users, games catalogue, settings

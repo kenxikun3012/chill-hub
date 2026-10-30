@@ -149,6 +149,20 @@ export function Button({
   );
 }
 
+export function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!selected }}
+      onPress={onPress}
+      className={`min-h-[40px] justify-center rounded-full border px-4 ${selected ? "border-accent bg-accent-soft" : "border-line bg-white"}`}
+    >
+      <Text className={selected ? "font-semibold text-accent" : "text-ink"}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function Banner({ tone = "info", children }: { tone?: "info" | "ok" | "bad"; children: ReactNode }) {
   const styles = {
     info: { box: "bg-accent-soft", text: "text-ink" },

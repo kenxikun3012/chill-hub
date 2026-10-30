@@ -5,6 +5,7 @@
   "dependencies": {
     "@chill-hub/shared": "^0.1.0",
     "@expo/metro-runtime": "~58.0.15",
+    "@expo/vector-icons": "^15.0.2",
     "expo": "~58.0.21",
     "expo-constants": "~58.0.14",
     "expo-linking": "~58.0.15",

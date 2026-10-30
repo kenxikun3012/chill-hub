@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { Banner, Button, Field, Heading, Muted, Screen } from "../src/components/ui";
+import { Banner, Button, Chip, Field, Heading, Muted, Screen } from "../src/components/ui";
 import { api, errorMessage } from "../src/lib/api";
 import type { ApprovalRequest } from "../src/lib/session";
 
@@ -30,20 +30,6 @@ const READY_REASONS = ["Student ID number is wrong", "Not a student of our colle
 const SPLIT_WIDTH = 800;
 
 const when = (date: string) => new Date(date).toLocaleString();
-
-function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: !!selected }}
-      onPress={onPress}
-      className={`min-h-[40px] justify-center rounded-full border px-4 ${selected ? "border-accent bg-accent-soft" : "border-line bg-white"}`}
-    >
-      <Text className={selected ? "font-semibold text-accent" : "text-ink"}>{label}</Text>
-    </Pressable>
-  );
-}
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (

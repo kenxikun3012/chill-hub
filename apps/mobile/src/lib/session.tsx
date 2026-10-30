@@ -9,6 +9,7 @@ export interface Account {
   studentIdNumber: string | null;
   status: UserStatus;
   roles: RoleName[];
+  profile: { displayName: string } | null;
   suspendedUntil: string | null;
   createdAt: string;
 }
@@ -21,7 +22,7 @@ export interface ApprovalRequest {
 }
 
 /** Which part of the app the user may see (ACC-06). */
-export type Stage = "loading" | "guest" | "details" | "pending" | "rejected" | "approved";
+export type Stage = "loading" | "guest" | "details" | "pending" | "rejected" | "setup" | "approved";
 
 interface SessionValue {
   stage: Stage;
@@ -40,7 +41,7 @@ function stageOf(account: Account | null, latest: ApprovalRequest | null): Stage
   if (!account) return "guest";
   if (account.status === "rejected") return "rejected";
   if (account.status === "pending") return latest?.status === "pending" ? "pending" : "details";
-  return "approved";
+  return account.profile ? "approved" : "setup";
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {

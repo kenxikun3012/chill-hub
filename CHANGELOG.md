@@ -4,6 +4,13 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Step 3b: Profile editing (2026-10-30)
+
+- Bottom tabs for approved players, and a required display name screen at the first login after approval.
+- My profile: details, games with ranks and roles, and reputation. Edit profile: display name, bio, department, year, and adding, editing and removing games (PRO-01, PRO-03).
+- `/players/:id`: another player's public profile, without email, real name or student ID (PRO-04).
+- Avatars show initials until file storage is set up.
+
 ### Step 3a, Part 3: Admin approval queue (2026-10-30)
 
 - `/admin` on the website, for admins only: pending, approved and rejected tabs, applicant details, approve, and reject with a required reason (ready-made reasons included). Stacks into one column on narrow screens (ACC-04, ADM-02).

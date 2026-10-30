@@ -1,8 +1,21 @@
-import { router } from "expo-router";
+import { Redirect, router, type Href } from "expo-router";
 import { Text, View } from "react-native";
 import { Button, Heading, Muted, Screen } from "../src/components/ui";
+import { useSession, type Stage } from "../src/lib/session";
 
-export default function Welcome() {
+const STAGE_SCREENS: Record<Exclude<Stage, "loading" | "guest">, Href> = {
+  details: "/sign-up-details",
+  pending: "/pending",
+  rejected: "/rejected",
+  setup: "/setup-profile",
+  approved: "/home",
+};
+
+/** The entry point: the welcome page for guests. Anyone else goes to the screen for their account stage. */
+export default function Index() {
+  const { stage } = useSession();
+  if (stage === "loading") return null;
+  if (stage !== "guest") return <Redirect href={STAGE_SCREENS[stage]} />;
   return (
     <Screen>
       <View className="grow items-center justify-center gap-3">
