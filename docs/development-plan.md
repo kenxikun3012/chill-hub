@@ -12,7 +12,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 | 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
 | 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | ✅ Built (2026-10-30): API, app screens and admin queue. See the [plan below](#step-3a-plan-authentication) |
 | 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ✅ Built (2026-10-30): initials instead of photos for now |
-| 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |
+| 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ✅ Built (2026-10-30): chat and lobbies refresh every few seconds until step 3d |
 | 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ⬜ |
 | 3e | **Post-match feedback**: rating screen, reputation on profiles | ⬜ |
 
@@ -76,6 +76,14 @@ Differences from the wireframes: no ID photo yet, and the student ID number's un
 ## Step 3b decisions
 
 Decided 2026-10-30. A display name is chosen on a required screen at the first login after approval. Approved players get bottom tabs (Home and Profile for now). `/` is the entry point: the welcome page for guests, a redirect to the right screen for everyone else. Avatars are initials until file storage arrives. `/players/:id` shows other players' public profiles and reputation, ready for step 3c to link to; "Report user" waits for moderation.
+
+## Step 3c decisions
+
+Decided 2026-10-30. Lobbies can be scheduled up to 24 hours ahead (spec v0.7), so the host picks Now or types a clock time, which means its next occurrence. An open chat refreshes every 5 seconds and an open lobby every 10 until Socket.IO arrives in step 3d; the list refreshes on opening and pull-down. Search is left out for now. Closing a lobby makes chat read-only and sends the rating notification; the rating screen is step 3e. Differences from the wireframes: the lobby page shows no rank or role per member and no host reputation on cards, because the API doesn't return them yet.
+
+## Staff and lobbies
+
+Decided 2026-10-30 (spec v0.8). Moderators and admins are staff accounts and can't use lobbies, even with the player role. The Lobbies and Create tabs and My lobbies are hidden for them, and the API refuses them. Admins can still delete a lobby through the API until a moderation screen exists. Organizers keep lobby access.
 
 ## Later increments (from the spec)
 

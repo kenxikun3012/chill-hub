@@ -4,6 +4,8 @@ import type { Actor } from "../../common/auth/actor";
 import { cursorArgs, toPage } from "../../common/http/pagination";
 import { Prisma } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
+import { LobbiesService } from "../lobbies/lobbies.service";
+import { LobbyMembersService } from "../lobbies/lobby-members.service";
 import { SettingsService } from "../settings/settings.service";
 
 const USER_INCLUDE = {
@@ -33,6 +35,8 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settings: SettingsService,
+    private readonly lobbies: LobbiesService,
+    private readonly lobbyMembers: LobbyMembersService,
   ) {}
 
   async list(q: UsersListQuery) {
@@ -104,8 +108,27 @@ export class UsersService {
     return toAccountView(updated);
   }
 
+  /** Someone becoming staff can't use lobbies any more, so they're taken out while they still can be. */
+  private async leaveLobbies(user: Awaited<ReturnType<UsersService["get"]>>) {
+    const self: Actor = { id: user.id, name: user.name, email: user.email, status: user.status, suspendedUntil: user.suspendedUntil, roles: user.roles };
+    const memberships = await this.prisma.lobbyMember.findMany({
+      where: { userId: user.id, leftAt: null, lobby: { status: { in: [...ACTIVE_LOBBY_STATUSES] } } },
+      select: { lobbyId: true, lobby: { select: { hostId: true } } },
+    });
+    for (const { lobbyId, lobby } of memberships) {
+      if (lobby.hostId === user.id) await this.lobbies.update(lobbyId, { status: "closed" }, self);
+      else await this.lobbyMembers.removeMember(lobbyId, user.id, self);
+    }
+    await this.prisma.lobbyJoinRequest.updateMany({
+      where: { userId: user.id, status: "pending" },
+      data: { status: "cancelled", respondedAt: new Date() },
+    });
+  }
+
   async setRoles(id: string, roles: RoleName[], actor: Actor) {
-    await this.get(id);
+    const user = await this.get(id);
+    const isStaffRole = (role: RoleName) => role === "admin" || role === "moderator";
+    if (roles.some(isStaffRole) && !user.roles.some(isStaffRole)) await this.leaveLobbies(user);
     if (id === actor.id && !roles.includes("admin")) {
       throw new BadRequestException("You can't remove your own admin role");
     }

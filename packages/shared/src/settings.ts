@@ -41,7 +41,7 @@ export const SETTING_DEFAULTS: SettingValues = {
 };
 
 /** Settings any client may read (e.g. to hint the email domain on the sign-up form). */
-export const PUBLIC_SETTING_KEYS = ["allowed_email_domains"] as const satisfies readonly SettingKey[];
+export const PUBLIC_SETTING_KEYS = ["allowed_email_domains", "max_active_lobbies_per_player"] as const satisfies readonly SettingKey[];
 
 export const settingUpdateSchema = z.strictObject({ value: z.unknown() });
 export type SettingUpdateInput = z.infer<typeof settingUpdateSchema>;

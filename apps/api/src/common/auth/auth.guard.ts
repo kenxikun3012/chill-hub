@@ -13,8 +13,8 @@ import type { Request } from "express";
 import { ENV, type Env } from "../../config/env";
 import { AuthService } from "../../modules/auth/auth.service";
 import { PrismaService } from "../../prisma/prisma.service";
-import type { Actor } from "./actor";
-import { ALLOW_PENDING, IS_PUBLIC, REQUIRED_ROLES } from "./decorators";
+import { isStaff, type Actor } from "./actor";
+import { ALLOW_PENDING, IS_PUBLIC, NO_STAFF, REQUIRED_ROLES } from "./decorators";
 
 export const DEV_USER_HEADER = "x-dev-user-id";
 
@@ -52,6 +52,9 @@ export class AuthGuard implements CanActivate {
     this.checkStatus(actor, allowPending, req.method);
     if (roles.length && !roles.some((r) => actor.roles.includes(r))) {
       throw new ForbiddenException("You don't have permission to do this");
+    }
+    if (this.reflector.getAllAndOverride<boolean>(NO_STAFF, targets) && isStaff(actor)) {
+      throw new ForbiddenException("Staff accounts can't use lobbies");
     }
     req.actor = actor;
     return true;

@@ -14,6 +14,9 @@ export interface Account {
   createdAt: string;
 }
 
+/** Moderators and admins run the app; they don't use lobbies. */
+export const isStaffAccount = (account: Account | null) => !!account?.roles.some((role) => role === "admin" || role === "moderator");
+
 export interface ApprovalRequest {
   id: string;
   status: "pending" | "approved" | "rejected";

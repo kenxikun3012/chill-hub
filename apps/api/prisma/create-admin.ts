@@ -59,7 +59,7 @@ async function main() {
       email,
       emailVerified: true,
       status: "approved",
-      roles: { create: [{ role: "admin" }, { role: "player" }] },
+      roles: { create: [{ role: "admin" }] },
       accounts: { create: { accountId: id, providerId: "credential", password: await hashPassword(password) } },
     },
   });

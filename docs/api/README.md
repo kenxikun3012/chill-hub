@@ -96,6 +96,8 @@ Applied to every request by the guard (`src/common/auth/dev-auth.guard.ts`):
 | suspended | Read (GET) anything; no changes until `suspendedUntil` (MOD-06) |
 | banned / deleted | Nothing |
 
+Moderators and admins get 403 on all `/lobbies` routes, even with the player role, except that admins can delete a lobby. Being given either role takes the person out of their active lobbies and closes any they host.
+
 Roles: **player** (every approved user), **moderator** (read users), **organizer** (Phase 2), **admin** (manage users, approvals, games, settings; delete any lobby).
 
 ## 5. Endpoints
@@ -152,7 +154,7 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 
 | Method | Path | Who | Purpose |
 |---|---|---|---|
-| GET | `/lobbies` | | Browse. Filters: `gameId`, `modeId`, `status` (default `open`), `visibility`, `roleId`, `rankId` (lobbies whose range includes this rank), `hostId`, `startsAfter`, `startsBefore`, `mine=true` (my active lobbies) |
+| GET | `/lobbies` | | Browse. Filters: `gameId`, `modeId`, `status` (default `open`), `visibility`, `roleId`, `rankId` (lobbies whose range includes this rank), `hostId`, `voiceChat`, `startsAfter`, `startsBefore`, `mine=true` (my active lobbies) |
 | GET | `/lobbies/:id` | | Detail with member list. `lobbyCode` is `null` when you may not see it |
 | POST | `/lobbies` | | Create (you become host and first member) |
 | PATCH | `/lobbies/:id` | host | Edit any field, change code, `status: "in_progress"` or `"closed"` |
@@ -185,7 +187,7 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 |---|---|---|
 | Private lobby codes only reach the host and active members; closed/expired lobbies show no code | NFR-06, LOB-03, LOB-09 | `canSeeCode()` in `lobby.presenter.ts`, the single place that decides |
 | A lobby needs a code; capacity ≤ the game's max lobby size and ≥ current players; mode, ranks and roles must belong to the game; lowest rank ≤ highest | LOB-01, LOB-02 | `lobby-rules.ts` |
-| Start time between 5 minutes ago and 14 days ahead | LOB-01 | `lobby-rules.ts` |
+| Start time between 5 minutes ago and 24 hours ahead | LOB-01 | `lobby-rules.ts` |
 | A player can be in at most `max_active_lobbies_per_player` active lobbies (hosting counts) | LOB-13 | checked on create, join and accept |
 | Lobby becomes `full` / back to `open` as players join and leave; full lobbies are hidden from browse | LOB-08 | `syncFullness()` |
 | Open lobbies more than `lobby_expiry_hours` past their start are hidden from browse (marked `expired` by a job in step 3d) | LOB-09 | `LobbiesService.list` |
@@ -201,7 +203,7 @@ Real-time delivery (WebSocket events, push and email) is **not** in this step. T
 
 ## 7. Testing
 
-The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 74 tests in 6 files, covering every rule in section 6.
+The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 84 tests in 8 files, covering every rule in section 6.
 
 **Setup (once):** in Neon, create a branch called `test` (from `dev`), then add to `apps/api/.env`:
 

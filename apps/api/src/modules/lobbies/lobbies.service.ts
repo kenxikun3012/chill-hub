@@ -32,6 +32,7 @@ export class LobbiesService {
       ...(q.modeId ? { modeId: q.modeId } : {}),
       ...(q.visibility ? { visibility: q.visibility } : {}),
       ...(q.hostId ? { hostId: q.hostId } : {}),
+      ...(q.voiceChat !== undefined ? { voiceChat: q.voiceChat } : {}),
       ...(q.roleId ? { neededRoles: { some: { gameRoleId: q.roleId } } } : {}),
     };
     if (q.mine) {

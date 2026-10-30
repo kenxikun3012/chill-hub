@@ -37,6 +37,7 @@ export const lobbiesListQuerySchema = paginationQuerySchema.extend({
   /** Lobbies whose rank range includes this rank. */
   rankId: idSchema.optional(),
   hostId: idSchema.optional(),
+  voiceChat: z.stringbool().optional(),
   startsAfter: dateTimeSchema.optional(),
   startsBefore: dateTimeSchema.optional(),
   /** Only lobbies the current user is an active member of (Home's "My upcoming lobbies"). */

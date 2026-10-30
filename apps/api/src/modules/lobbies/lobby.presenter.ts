@@ -13,7 +13,7 @@ export function lobbyInclude(viewerId: string) {
     neededRoles: { select: { gameRole: { select: { id: true, name: true } } } },
     host: { select: { id: true, profile: PROFILE_SELECT } },
     members: { where: { userId: viewerId, leftAt: null }, select: { userId: true } },
-    joinRequests: { where: { userId: viewerId }, select: { status: true } },
+    joinRequests: { where: { userId: viewerId }, select: { id: true, status: true } },
     _count: { select: { members: { where: { leftAt: null } } } },
   } satisfies Prisma.LobbyInclude;
 }
@@ -54,6 +54,7 @@ export function toLobbyView(row: LobbyRow, viewerId: string) {
       isHost: row.hostId === viewerId,
       isMember: row.members.length > 0,
       joinRequestStatus: row.joinRequests[0]?.status ?? null,
+      joinRequestId: row.joinRequests[0]?.id ?? null,
     },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

@@ -2,7 +2,7 @@ import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, Platform, View } from "react-native";
-import { SessionProvider, useSession } from "../src/lib/session";
+import { isStaffAccount, SessionProvider, useSession } from "../src/lib/session";
 
 /** Each account stage only reaches its own screens (ACC-06); moving between stages redirects automatically. */
 function Routes() {
@@ -42,6 +42,10 @@ function Routes() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="players/[id]" />
+      </Stack.Protected>
+      <Stack.Protected guard={stage === "approved" && !isStaffAccount(account)}>
+        <Stack.Screen name="lobby/[id]" />
+        <Stack.Screen name="edit-lobby" />
       </Stack.Protected>
       <Stack.Protected guard={isAdmin}>
         <Stack.Screen name="admin" />

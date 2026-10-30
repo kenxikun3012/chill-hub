@@ -20,7 +20,7 @@ const HOUR = 60 * 60 * 1000;
 type DemoUser = { id: string; handle: string; name: string; roles: RoleName[] };
 
 const USERS: DemoUser[] = [
-  { id: "00000000-0000-4000-8000-000000000001", handle: "demo_admin", name: "Demo Admin", roles: ["admin", "player"] },
+  { id: "00000000-0000-4000-8000-000000000001", handle: "demo_admin", name: "Demo Admin", roles: ["admin"] },
   { id: "00000000-0000-4000-8000-000000000002", handle: "demo_aye", name: "Demo Player Aye", roles: ["player"] },
   { id: "00000000-0000-4000-8000-000000000003", handle: "demo_bo", name: "Demo Player Bo", roles: ["player"] },
   { id: "00000000-0000-4000-8000-000000000004", handle: "demo_chit", name: "Demo Player Chit", roles: ["player"] },
@@ -63,6 +63,8 @@ async function seedUsers() {
         create: { userId: u.id, role },
       });
     }
+    // Earlier versions of this seed made the demo admin a player too.
+    await prisma.userRole.deleteMany({ where: { userId: u.id, role: { notIn: u.roles } } });
     await prisma.profile.upsert({
       where: { userId: u.id },
       update: {},

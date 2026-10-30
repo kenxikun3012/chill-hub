@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   View,
+  type ScrollViewProps,
   type TextInputProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +20,8 @@ export function Screen({
   back,
   right,
   wide,
+  fixed,
+  refreshControl,
   children,
 }: {
   title?: string;
@@ -26,6 +29,9 @@ export function Screen({
   right?: ReactNode;
   /** Desktop width, for the admin pages. */
   wide?: boolean;
+  /** Fills the screen without scrolling, for pages that scroll a part of themselves (chat). */
+  fixed?: boolean;
+  refreshControl?: ScrollViewProps["refreshControl"];
   children: ReactNode;
 }) {
   const width = wide ? "max-w-[1100px]" : "max-w-[480px]";
@@ -50,9 +56,13 @@ export function Screen({
             {right}
           </View>
         ) : null}
-        <ScrollView contentContainerClassName="grow" keyboardShouldPersistTaps="handled">
-          <View className={`mx-auto w-full ${width} grow gap-4 px-4 pb-6 pt-2`}>{children}</View>
-        </ScrollView>
+        {fixed ? (
+          <View className={`mx-auto w-full ${width} flex-1 gap-3 px-4 pb-3 pt-2`}>{children}</View>
+        ) : (
+          <ScrollView contentContainerClassName="grow" keyboardShouldPersistTaps="handled" refreshControl={refreshControl}>
+            <View className={`mx-auto w-full ${width} grow gap-4 px-4 pb-6 pt-2`}>{children}</View>
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

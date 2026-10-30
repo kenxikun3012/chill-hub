@@ -4,6 +4,20 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Staff accounts and lobbies (2026-10-30)
+
+- Moderators and admins can't find, create, join or chat in lobbies, even with the player role. The API refuses them, and the app hides the Lobbies and Create tabs and My lobbies. Spec v0.8.
+- Being given either role takes the person out of their active lobbies, closes any they host, and cancels their pending requests.
+- `admin:create` and the demo admin no longer get the player role. Admins can still delete a lobby for moderation.
+
+### Step 3c: Lobby screens (2026-10-30)
+
+- Browse with game chips and filters (mode, rank, role, voice, start time, type), 3-step create, and edit (LOB-01, 02, 03, 06, 07).
+- Lobby page: code with copy, members, take a slot, request to join and cancel, leave, host accept, decline, remove and close, and chat that refreshes every few seconds (LOB-04, 05, 10, 11).
+- Home shows "My lobbies"; Lobbies and Create join the bottom tabs.
+- Spec v0.7: lobbies can be scheduled up to 24 hours ahead, not 14 days. The API enforces it.
+- API: `voiceChat` browse filter, `viewer.joinRequestId` on lobbies, and `max_active_lobbies_per_player` is now a public setting.
+
 ### Step 3b: Profile editing (2026-10-30)
 
 - Bottom tabs for approved players, and a required display name screen at the first login after approval.

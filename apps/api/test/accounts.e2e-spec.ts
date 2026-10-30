@@ -127,7 +127,7 @@ describe("Users, approvals and settings", () => {
   describe("settings (ADM-06)", () => {
     it("public settings need no login", async () => {
       const res = await ctx.http().get(`${API}/settings/public`).expect(200);
-      expect(res.body).toEqual({ allowed_email_domains: [DOMAIN] });
+      expect(res.body).toEqual({ allowed_email_domains: [DOMAIN], max_active_lobbies_per_player: 3 });
     });
 
     it("admins can change a setting; invalid values are refused", async () => {

@@ -4,7 +4,7 @@
 |---|---|
 | **Product** | Chill Hub (working name): college gaming hub |
 | **Platforms** | Website, Android app, iOS app, Admin web panel |
-| **Version** | 0.6 (draft): hosting changed to a low-cost VPS, with two database options (on the VPS or on Neon Free) |
+| **Version** | 0.8 (draft): Moderators and Admins can't use lobbies; lobbies can be scheduled up to 24 hours ahead |
 | **Date** | 2026-10-15 |
 | **Owner** | College esports club |
 | **Status** | Draft for review |
@@ -51,11 +51,13 @@ Accounts are restricted to approved college students. Admins review every sign-u
 |---|---|---|
 | **Visitor** | Not logged in, or account pending | View landing page; sign up; check approval status |
 | **Player** | Approved student | Create/join lobbies, chat, write guides, ask/answer questions, rate teammates, report, register for tournaments |
-| **Moderator** | Trusted students/staff | Everything a Player can do, plus: review reports, hide/remove content, warn/suspend users |
+| **Moderator** | Trusted students/staff | Everything a Player can do except lobbies, plus: review reports, hide/remove content, warn/suspend users |
 | **Tournament Organizer** | Authorized esports club moderators | Create and run tournaments, confirm results, manage brackets |
-| **Admin** | App administrators | Everything above, plus: approve/reject accounts, assign roles, manage the games list, post news, change system settings, ban users |
+| **Admin** | App administrators | Everything above except lobbies, plus: approve/reject accounts, assign roles, manage the games list, post news, change system settings, ban users |
 
 A user can hold more than one role (e.g. Moderator + Tournament Organizer).
+
+Moderators and Admins can't find, create, join or chat in lobbies, even if they also hold the Player role, and they never see lobby codes. Being given either role takes the person out of their active lobbies and closes any they host. Admins can still delete a lobby for moderation.
 
 ### 2.2 Operating environment
 - **Website:** latest two versions of Chrome, Edge, Firefox and Safari; responsive from 360 px phone width to desktop.
@@ -111,7 +113,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 
 | ID | Requirement | Priority |
 |---|---|---|
-| LOB-01 | A player can create a lobby with: game, mode, **in-game lobby code (required)**, number of open slots, rank range, needed roles, voice chat yes/no, start time ("now" or a scheduled time), and an optional note. | MVP |
+| LOB-01 | A player can create a lobby with: game, mode, **in-game lobby code (required)**, number of open slots, rank range, needed roles, voice chat yes/no, start time ("now" or a scheduled time up to 24 hours ahead), and an optional note. | MVP |
 | LOB-02 | A lobby cannot be published without a lobby code. | MVP |
 | LOB-03 | When creating a lobby, the host chooses **Public** (code visible to all approved users) or **Private** (code visible only to accepted members). | MVP |
 | LOB-04 | **Public lobby:** any approved player can take an open slot right away and sees the code. | MVP |

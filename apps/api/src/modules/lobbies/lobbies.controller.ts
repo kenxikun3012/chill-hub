@@ -20,13 +20,14 @@ import {
   type RatingUpsertInput,
 } from "@chill-hub/shared";
 import type { Actor } from "../../common/auth/actor";
-import { CurrentActor } from "../../common/auth/decorators";
+import { CurrentActor, NoStaff } from "../../common/auth/decorators";
 import { RatingsService } from "../ratings/ratings.service";
 import { LobbiesService } from "./lobbies.service";
 import { LobbyChatService } from "./lobby-chat.service";
 import { LobbyMembersService } from "./lobby-members.service";
 
 @ApiTags("Lobbies")
+@NoStaff()
 @Controller("lobbies")
 export class LobbiesController {
   constructor(
@@ -62,6 +63,8 @@ export class LobbiesController {
     return this.lobbies.update(id, body, actor);
   }
 
+  /** Hosts delete empty lobbies; admins can delete any, for moderation. */
+  @NoStaff(false)
   @Delete(":id")
   @HttpCode(204)
   remove(@Param("id", { schema: idSchema }) id: string, @CurrentActor() actor: Actor) {
