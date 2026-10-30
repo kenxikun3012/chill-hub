@@ -8,6 +8,7 @@ node_modules/
 
 # build output
 dist/
+*.tsbuildinfo
 build/
 .expo/
 web-build/
@@ -23,3 +24,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+#unnecessary files
+contextsummary.md

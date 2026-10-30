@@ -14,7 +14,7 @@ The API (NestJS) needs a type-safe way to define and migrate the PostgreSQL sche
 4. **Text primary keys with UUID values.** Better Auth creates its own string IDs for auth tables; using `text` everywhere keeps all foreign keys to `users` the same type.
 5. **snake_case in the database, camelCase in code** via `@map` / `@@map`; plural table names.
 6. **CHECK constraints** that Prisma can't express are appended by hand to migrations and listed in [docs/database](../database/README.md#5-constraints-and-indexes).
-7. **TypeScript 5.9** (pinned) instead of TypeScript 7 (the native compiler), until NestJS tooling supports it.
+7. ~~**TypeScript 5.9** (pinned) instead of TypeScript 7.~~ Superseded by [ADR 0003](0003-api-conventions.md): TypeScript 6.0, which the NestJS 12 CLI requires. TypeScript 7 is still avoided.
 
 ## Consequences
 

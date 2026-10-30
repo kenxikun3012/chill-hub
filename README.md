@@ -2,16 +2,16 @@
 
 A gaming hub for our college: find teammates through game lobbies, share game knowledge, and (later) run esports tournaments. Android, iOS and web from one Expo codebase, backed by a NestJS API and PostgreSQL.
 
-> **Status:** MVP-1, step 1 (database) in progress. See the [development plan](docs/development-plan.md).
+> **Status:** MVP-1, step 2 (CRUD APIs) done. See the [development plan](docs/development-plan.md).
 
 ## Repository layout
 
 ```
 apps/
-  api/            NestJS API (Prisma schema, migrations, seed in apps/api/prisma)
+  api/            NestJS API: src/ (modules), test/ (e2e), prisma/ (schema, migrations, seed)
   app/            Expo app for Android, iOS and web (coming in step 3)
 packages/
-  shared/         Shared types, validation and API client (coming in step 2)
+  shared/         Zod schemas, enums and types shared by the API and the app
 docs/             Development docs: plan, database design, decision records
 diagrams/         Use case, process and ERD diagrams (draw.io + PNG)
 wireframes/       Clickable wireframe prototype (open index.html)
@@ -41,6 +41,8 @@ npm run db:seed
 
 | Script | What it does |
 |---|---|
+| `npm run api:dev` | Start the API in watch mode (Swagger at http://localhost:3000/api/v1/docs) |
+| `npm run api:test` | Run the API end-to-end tests (needs `TEST_DATABASE_URL`) |
 | `npm run db:migrate` | Apply migrations to the dev database (creates new ones after schema changes) |
 | `npm run db:seed` | Load games catalogue and default settings |
 | `npm run db:studio` | Browse the database in Prisma Studio |

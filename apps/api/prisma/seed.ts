@@ -2,6 +2,7 @@
 // Safe to run repeatedly (upserts). Run with: npm run db:seed (from the repo root or apps/api).
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { SETTING_DEFAULTS } from "@chill-hub/shared";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const prisma = new PrismaClient({
@@ -78,17 +79,10 @@ const GAMES: GameSeed[] = [
   },
 ];
 
-// Defaults from the spec (ADM-06, LOB-09, LOB-11, LOB-13, REP-03, REP-04, ACC-08).
-const SETTINGS: Record<string, unknown> = {
-  allowed_email_domains: ["yourcollege.edu"],
-  lobby_expiry_hours: 2,
-  max_active_lobbies_per_host: 3,
-  lobby_chat_retention_days: 7,
-  lobby_start_reminder_minutes: 10,
-  rating_edit_window_hours: 24,
-  no_show_flag_threshold_percent: 20,
-  id_photo_retention_days: 30,
-};
+// Settings defaults live in @chill-hub/shared so the API and seed always agree.
+const SETTINGS: Record<string, unknown> = SETTING_DEFAULTS;
+// Keys renamed in later versions; removed so stale values can't confuse anyone.
+const OBSOLETE_SETTINGS = ["max_active_lobbies_per_host"];
 
 async function seedGames() {
   for (const [index, g] of GAMES.entries()) {
@@ -147,7 +141,8 @@ async function seedSettings() {
       create: { key, value: value as object },
     });
   }
-  console.log(`  settings: ${Object.keys(SETTINGS).length} defaults`);
+  const removed = await prisma.setting.deleteMany({ where: { key: { in: OBSOLETE_SETTINGS } } });
+  console.log(`  settings: ${Object.keys(SETTINGS).length} defaults${removed.count ? `, removed ${removed.count} obsolete` : ""}`);
 }
 
 async function main() {

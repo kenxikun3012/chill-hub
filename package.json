@@ -10,9 +10,15 @@
     "node": ">=22"
   },
   "scripts": {
+    "build:shared": "npm run build -w @chill-hub/shared",
+    "api:dev": "npm run dev -w @chill-hub/api",
+    "api:build": "npm run build -w @chill-hub/api",
+    "api:test": "npm test -w @chill-hub/api",
+    "api:typecheck": "npm run build:shared && npm run typecheck -w @chill-hub/api",
     "db:generate": "npm run db:generate -w @chill-hub/api",
     "db:migrate": "npm run db:migrate -w @chill-hub/api",
     "db:seed": "npm run db:seed -w @chill-hub/api",
+    "db:seed:demo": "npm run db:seed:demo -w @chill-hub/api",
     "db:studio": "npm run db:studio -w @chill-hub/api",
     "spec:docx": "node tools/md2docx.js SPEC.md \"Chill Hub - Requirements Specification.docx\""
   },

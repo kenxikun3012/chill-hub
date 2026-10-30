@@ -9,7 +9,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 | Step | Work | Status |
 |---|---|---|
 | 1 | **Database**: MVP-1 schema, first migration, seed data, database docs | ✅ Done (2026-10-24): applied and seeded on the Neon `dev` branch |
-| 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ⬜ Not started |
+| 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
 | 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | ⬜ |
 | 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ⬜ |
 | 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |

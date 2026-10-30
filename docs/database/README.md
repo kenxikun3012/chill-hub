@@ -279,20 +279,20 @@ The draw.io ERD was drawn before development. MVP-1 differs as follows (the ERD 
 `npm run db:seed` loads reference data, and is safe to run repeatedly:
 
 - **Games:** Valorant, Mobile Legends, PUBG Mobile, EA FC and League of Legends, each with ranks, roles and modes.
-- **Settings** (only created if missing, so admin changes are kept):
+- **Settings** (defaults come from `SETTING_DEFAULTS` in `@chill-hub/shared`; only created if missing, so admin changes are kept; the old key `max_active_lobbies_per_host` is removed):
 
 | Key | Default | Spec |
 |---|---|---|
 | `allowed_email_domains` | `["yourcollege.edu"]` (replace with the real domain) | ACC-02 |
 | `lobby_expiry_hours` | 2 | LOB-09 |
-| `max_active_lobbies_per_host` | 3 | LOB-13 |
+| `max_active_lobbies_per_player` | 3 | LOB-13 (counts lobbies a player is in, hosting included) |
 | `lobby_chat_retention_days` | 7 | LOB-11 |
 | `lobby_start_reminder_minutes` | 10 | LOB-12 |
 | `rating_edit_window_hours` | 24 | REP-03 |
 | `no_show_flag_threshold_percent` | 20 | REP-04 |
 | `id_photo_retention_days` | 30 | ACC-08 |
 
-Demo users are added in the authentication increment, because their passwords must be hashed by Better Auth.
+`npm run db:seed:demo` (run after `db:seed`, dev only, refuses `NODE_ENV=production`) adds an admin, three players and two Valorant lobbies (one public, one private) with fixed ids, so it prints the `x-dev-user-id` values to use. The demo users have no passwords; sign-in demo accounts come with the authentication increment, because passwords must be hashed by Better Auth.
 
 ## 9. Working with the database
 

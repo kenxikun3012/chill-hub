@@ -5,8 +5,9 @@
 // snake_case tables and columns in PostgreSQL, text IDs (UUID strings), timestamps in UTC.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
