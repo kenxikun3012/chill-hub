@@ -132,7 +132,8 @@ model User {
   email           String     @unique
   emailVerified   Boolean    @default(false) @map("email_verified")
   image           String?
-  studentIdNumber String     @unique @map("student_id_number")
+  // Empty until sign-up step 3; an approval request needs it.
+  studentIdNumber String?    @unique @map("student_id_number")
   status          UserStatus @default(pending)
   suspendedUntil  DateTime?  @map("suspended_until")
   createdAt       DateTime   @default(now()) @map("created_at")

@@ -5,7 +5,6 @@
   "description": "Shared Zod schemas, enums and types for the Chill Hub API and app",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "react-native": "src/index.ts",
   "files": [
     "dist",
     "src"

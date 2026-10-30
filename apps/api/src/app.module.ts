@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
-import { DevAuthGuard } from "./common/auth/dev-auth.guard";
+import { AuthGuard } from "./common/auth/auth.guard";
 import { CoreModule } from "./core/core.module";
+import { AuthService } from "./modules/auth/auth.service";
 import { ApprovalsService } from "./modules/accounts/approvals.service";
 import { ApprovalsController, MeController, UsersController } from "./modules/accounts/accounts.controllers";
 import { UsersService } from "./modules/accounts/users.service";
@@ -34,7 +35,8 @@ import { SettingsController } from "./modules/settings/settings.controller";
     SettingsController,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: DevAuthGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
+    AuthService,
     UsersService,
     ApprovalsService,
     GamesService,

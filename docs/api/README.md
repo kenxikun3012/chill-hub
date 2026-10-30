@@ -7,7 +7,7 @@
 
 1. [Running the API](#1-running-the-api)
 2. [Conventions](#2-conventions)
-3. [Identifying the user (temporary)](#3-identifying-the-user-temporary)
+3. [Authentication](#3-authentication)
 4. [Access rules](#4-access-rules)
 5. [Endpoints](#5-endpoints)
 6. [Business rules enforced by the API](#6-business-rules-enforced-by-the-api)
@@ -56,19 +56,34 @@ Example error:
 }
 ```
 
-## 3. Identifying the user (temporary)
+## 3. Authentication
 
-Until Better Auth is added in step 3a, requests identify the user with a header:
+Better Auth runs inside the API at `/api/v1/auth` (see [ADR 0004](../decisions/0004-authentication.md)). Send JSON. These routes return errors as `{ code, message }`.
 
-```
-x-dev-user-id: <user id>
-```
+| Step | Request | Body | Result |
+|---|---|---|---|
+| Sign-up 1 | `POST /auth/sign-up/email` | `name, email, password` | Emails a 6-digit code. College domains only; password 8–128 characters |
+| Sign-up 2 | `POST /auth/email-otp/verify-email` | `email, otp` | Logged in as pending; returns `token` |
+| Resend code | `POST /auth/email-otp/send-verification-otp` | `email, type: "email-verification"` | Emails a new code |
+| Sign-up 3 | `PUT /me/sign-up-details` | `studentIdNumber, inGameAccount: { gameId, inGameName, rankId?, preferredRoleIds? }` | Saves details and joins the approval queue |
+| Log in | `POST /auth/sign-in/email` | `email, password` | Returns `token`. 403 if the email isn't verified (a new code is sent) or the account is banned |
+| Log out | `POST /auth/sign-out` | `{}` | Ends this session |
+| Forgot password | `POST /auth/email-otp/request-password-reset` | `email` | Always 200; emails a code if the account exists |
+| Reset password | `POST /auth/email-otp/reset-password` | `email, otp, password` | Sets the password and ends all sessions |
 
-- Only works when `DEV_AUTH=true`. The API refuses to start if `DEV_AUTH=true` and `NODE_ENV=production`.
-- With `DEV_AUTH` off, every non-public route returns 401.
-- In step 3a the header is replaced by a session cookie / token. The account-status and role rules in section 4 stay the same.
+**Staying logged in:** the website uses an HttpOnly cookie. The app sends `Authorization: Bearer <token>`, with the token from the response above or the `set-auth-token` header. Sessions last 30 days and renew with use.
 
-To create test users, use `POST /users` as an admin, or Prisma Studio (`npm run db:studio`) to make the first admin.
+**Re-applying after a rejection:** the reason is in `GET /me/approval-requests`. Call `PUT /me/sign-up-details` again with the corrected details; earlier requests stay in the history.
+
+**Limits:** 5 login or sign-up attempts per minute per client address (NFR-09). Codes last 10 minutes and allow 5 attempts.
+
+**First admin:** run `npm run admin:create` on the server. It asks for a name, email and password.
+
+**Emails:** in development they're printed to the API console, codes included. In production, set `RESEND_API_KEY` and `MAIL_FROM`.
+
+**Development shortcut:** with `DEV_AUTH=true`, the `x-dev-user-id: <user id>` header also identifies a user. The API refuses to start with it on in production. `npm run db:seed:demo` prints demo user ids.
+
+**Production settings:** `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`, `RESEND_API_KEY` and `MAIL_FROM` are required, or the API refuses to start. Run the API behind Caddy with its port closed to the internet, because rate limiting trusts `x-forwarded-for`.
 
 ## 4. Access rules
 
@@ -102,7 +117,8 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 |---|---|---|---|
 | GET | `/me` | ⏳ | My account: status, roles, email, student ID |
 | DELETE | `/me` | ⏳ | Delete my account (ACC-10) |
-| GET / POST | `/me/approval-requests` | ⏳ | My approval history / ask for (re-)review |
+| PUT | `/me/sign-up-details` | ⏳ | Sign-up step 3 or fix details after a rejection, then join the queue |
+| GET / POST | `/me/approval-requests` | ⏳ | My approval history / ask for (re-)review (needs a student ID number and an in-game ID) |
 | GET / PUT | `/me/profile` | ⏳ | My profile / create or update it |
 | GET / POST | `/me/in-game-accounts` | ⏳ | My in-game IDs / add one |
 | PATCH / DELETE | `/me/in-game-accounts/:id` | ⏳ | Edit / remove one |
@@ -185,7 +201,7 @@ Real-time delivery (WebSocket events, push and email) is **not** in this step. T
 
 ## 7. Testing
 
-The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 51 tests in 5 files, covering every rule in section 6.
+The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 74 tests in 6 files, covering every rule in section 6.
 
 **Setup (once):** in Neon, create a branch called `test` (from `dev`), then add to `apps/api/.env`:
 
@@ -212,9 +228,10 @@ apps/api/src
 ├─ config/env.ts                           environment variables (validated with Zod)
 ├─ core/core.module.ts                     global: env, Prisma, settings, notifications
 ├─ prisma/prisma.service.ts                Prisma client (pg adapter)
-├─ common/auth/                            dev auth guard, @Public, @AllowPending, @Roles, @CurrentActor
+├─ common/auth/                            session guard, @Public, @AllowPending, @Roles, @CurrentActor
 ├─ common/http/                            error filter, cursor pagination helpers
 └─ modules/
+   ├─ auth/          Better Auth setup, email senders
    ├─ accounts/      /me, /users, /approval-requests
    ├─ games/         /games (+ ranks, roles, modes)
    ├─ profiles/      /profiles, /me/profile, /me/in-game-accounts

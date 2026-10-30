@@ -4,8 +4,9 @@ import { SETTING_DEFAULTS, type RoleName, type UserStatus } from "@chill-hub/sha
 import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { configureApp } from "../src/app.setup";
-import { DEV_USER_HEADER } from "../src/common/auth/dev-auth.guard";
+import { DEV_USER_HEADER } from "../src/common/auth/auth.guard";
 import { ENV, loadEnv } from "../src/config/env";
+import { Mailer, type Mail } from "../src/modules/auth/mailer";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { SettingsService } from "../src/modules/settings/settings.service";
 import { testDatabaseEnv } from "./test-env";
@@ -17,20 +18,39 @@ export interface TestContext {
   app: INestApplication;
   prisma: PrismaService;
   http: () => ReturnType<typeof request>;
+  mail: MemoryMailer;
+}
+
+/** Keeps emails so tests can read the codes. */
+export class MemoryMailer extends Mailer {
+  sent: Mail[] = [];
+
+  async send(mail: Mail) {
+    this.sent.push(mail);
+  }
+
+  /** The newest code sent to this address. */
+  lastCode(to: string) {
+    const mail = this.sent.filter((m) => m.to === to).at(-1);
+    return mail?.text.match(/\b\d{6}\b/)?.[0];
+  }
 }
 
 /** Boots the real AppModule against the test database, with dev auth on. */
 export async function createTestApp(overrides: Record<string, string> = {}): Promise<TestContext> {
   const { url } = testDatabaseEnv();
-  const env = loadEnv({ ...process.env, NODE_ENV: "test", DATABASE_URL: url, DEV_AUTH: "true", ...overrides });
+  const env = loadEnv({ ...process.env, NODE_ENV: "test", DATABASE_URL: url, DEV_AUTH: "true", AUTH_RATE_LIMIT: "false", ...overrides });
+  const mail = new MemoryMailer();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(ENV)
     .useValue(env)
+    .overrideProvider(Mailer)
+    .useValue(mail)
     .compile();
   const app = moduleRef.createNestApplication({ logger: ["error"] });
   configureApp(app, env);
   await app.init();
-  return { app, prisma: app.get(PrismaService), http: () => request(app.getHttpServer()) };
+  return { app, prisma: app.get(PrismaService), http: () => request(app.getHttpServer()), mail };
 }
 
 /**

@@ -17,6 +17,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "admin:create": "tsx prisma/create-admin.ts",
     "db:studio": "prisma studio",
     "db:validate": "prisma validate"
   },
@@ -28,10 +29,12 @@
     "@nestjs/swagger": "^12.0.5",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "better-auth": "^1.7.14",
     "dotenv": "^18.0.9",
     "pg": "^8.23.1",
     "prisma": "^7.10.1",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.35.0",
     "rxjs": "^7.8.2",
     "zod": "^4.6.7"
   },

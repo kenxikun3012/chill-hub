@@ -156,7 +156,7 @@ The full ERD for all phases (including knowledge, moderation and tournaments) is
 
 | Table | Purpose | Key points |
 |---|---|---|
-| `users` | One row per person. | `status`: pending → approved / rejected; suspended or banned later. `student_id_number` is unique and never shown publicly (PRO-04). `deleted_at` supports account deletion (ACC-10). |
+| `users` | One row per person. | `status`: pending → approved / rejected; suspended or banned later. `student_id_number` is unique, never shown publicly (PRO-04), and empty until sign-up step 3. `deleted_at` supports account deletion (ACC-10). |
 | `sessions` | Login sessions (Better Auth). | `token` is unique. Deleted when a user is banned so they're logged out everywhere (ACC-09). |
 | `auth_accounts` | Login methods (Better Auth "account"). | Email + password uses `provider_id = 'credential'` with the password hash in `password`. |
 | `verifications` | Email codes and password-reset tokens (Better Auth). | Short-lived; `expires_at` is checked on use. |

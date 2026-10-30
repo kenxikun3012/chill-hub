@@ -1,4 +1,4 @@
-import { API, as, createTestApp, DOMAIN, makeUser, resetDb, type TestContext } from "./helpers";
+import { API, as, createTestApp, seededGame, DOMAIN, makeUser, resetDb, type TestContext } from "./helpers";
 
 describe("Users, approvals and settings", () => {
   let ctx: TestContext;
@@ -77,6 +77,8 @@ describe("Users, approvals and settings", () => {
 
     it("a pending user submits a request; a second one is refused", async () => {
       applicant = await makeUser(ctx, { status: "pending" });
+      const game = await seededGame(ctx);
+      await ctx.prisma.inGameAccount.create({ data: { userId: applicant.id, gameId: game.id, inGameName: "applicant#1" } });
       const res = await ctx.http().post(`${API}/me/approval-requests`).set(as(applicant.id)).expect(201);
       requestId = res.body.id;
       await ctx.http().post(`${API}/me/approval-requests`).set(as(applicant.id)).expect(409);

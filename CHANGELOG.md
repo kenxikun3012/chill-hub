@@ -4,6 +4,28 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Step 3a, Part 3: Admin approval queue (2026-10-30)
+
+- `/admin` on the website, for admins only: pending, approved and rejected tabs, applicant details, approve, and reject with a required reason (ready-made reasons included). Stacks into one column on narrow screens (ACC-04, ADM-02).
+- Admins get a "Sign-up approvals" button on the home page.
+
+### Step 3a, Part 2: Expo app (2026-10-30)
+
+- `apps/mobile`: Expo SDK 58 app and website with Expo Router and NativeWind (colours from the wireframes).
+- Screens: welcome, 3-step sign-up, email code with resend, log in, forgot and reset password, waiting for approval, rejected with re-apply, and a placeholder home.
+- Each account status only reaches its own screens (ACC-06). The website uses the session cookie; the app keeps a bearer token in secure storage.
+- `passwordSchema` added to `@chill-hub/shared`, which now always loads from its build output.
+
+### Step 3a, Part 1: Authentication API (2026-10-30)
+
+- Better Auth at `/api/v1/auth`: sign-up with college-domain check, 6-digit email codes, login, logout and password reset, with login rate limiting (ACC-01, 02, 07; NFR-09).
+- Real sessions replace the temporary header: cookie on web, bearer token in the app, 30 days. `x-dev-user-id` remains for development and tests only.
+- `PUT /me/sign-up-details`: sign-up step 3 and re-applying after a rejection. An approval request now needs a student ID number and an in-game ID.
+- Approval decisions are emailed (ACC-05). Emails print to the console in development and use Resend in production.
+- `npm run admin:create` creates the first admin.
+- Migration `20261030120000_nullable_student_id`: `users.student_id_number` is empty until sign-up step 3.
+- The API refuses to start in production without an auth secret, public URL and Resend settings. 74 end-to-end tests. Decisions in [ADR 0004](docs/decisions/0004-authentication.md).
+
 ### Step 2: Basic CRUD APIs (2026-10-28)
 
 - `packages/shared` (`@chill-hub/shared`): Zod 4 schemas, enums, settings defaults and API types, for both the API and the future Expo app.
