@@ -10,7 +10,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 |---|---|---|
 | 1 | **Database**: MVP-1 schema, first migration, seed data, database docs | ✅ Done (2026-10-24): applied and seeded on the Neon `dev` branch |
 | 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
-| 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | 🔄 Parts 1 and 2 of 3 built (API, app screens). See the [plan below](#step-3a-plan-authentication) |
+| 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | ✅ Built (2026-10-30): API, app screens and admin queue. See the [plan below](#step-3a-plan-authentication) |
 | 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ⬜ |
 | 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |
 | 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ⬜ |
@@ -60,7 +60,9 @@ Differences from the wireframes: the email code comes second rather than last, s
 2. Screens from the wireframes: 3-step sign-up, login, forgot password, and pending and rejected status pages with re-apply.
 3. Route protection by account status (ACC-06). Checked on web and on a phone through Expo Go.
 
-**Part 3: Admin approval queue**
+**Part 3: Admin approval queue** (built 2026-10-30; checked on web)
+
+Differences from the wireframes: no ID photo yet, and the student ID number's uniqueness isn't shown as a check because the API already refuses duplicates. The rest of the admin panel (navigation, dashboard, users, settings) comes in a later increment.
 
 1. Protected `/admin` routes on web, for admins only.
 2. Queue list, applicant details, approve, and reject with a reason.

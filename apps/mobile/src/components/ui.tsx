@@ -14,12 +14,26 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /** A page: safe area, keyboard handling, scrolling, and a phone-width column on large web screens. */
-export function Screen({ title, back, right, children }: { title?: string; back?: boolean; right?: ReactNode; children: ReactNode }) {
+export function Screen({
+  title,
+  back,
+  right,
+  wide,
+  children,
+}: {
+  title?: string;
+  back?: boolean;
+  right?: ReactNode;
+  /** Desktop width, for the admin pages. */
+  wide?: boolean;
+  children: ReactNode;
+}) {
+  const width = wide ? "max-w-[1100px]" : "max-w-[480px]";
   return (
     <SafeAreaView className="flex-1 bg-page">
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {title || back ? (
-          <View className="mx-auto w-full max-w-[480px] flex-row items-center gap-2 px-4 py-3">
+          <View className={`mx-auto w-full ${width} flex-row items-center gap-2 px-4 py-3`}>
             {back ? (
               <Pressable
                 accessibilityRole="button"
@@ -37,7 +51,7 @@ export function Screen({ title, back, right, children }: { title?: string; back?
           </View>
         ) : null}
         <ScrollView contentContainerClassName="grow" keyboardShouldPersistTaps="handled">
-          <View className="mx-auto w-full max-w-[480px] grow gap-4 px-4 pb-6 pt-2">{children}</View>
+          <View className={`mx-auto w-full ${width} grow gap-4 px-4 pb-6 pt-2`}>{children}</View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

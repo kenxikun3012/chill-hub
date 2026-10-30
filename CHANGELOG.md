@@ -4,6 +4,11 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Step 3a, Part 3: Admin approval queue (2026-10-30)
+
+- `/admin` on the website, for admins only: pending, approved and rejected tabs, applicant details, approve, and reject with a required reason (ready-made reasons included). Stacks into one column on narrow screens (ACC-04, ADM-02).
+- Admins get a "Sign-up approvals" button on the home page.
+
 ### Step 3a, Part 2: Expo app (2026-10-30)
 
 - `apps/mobile`: Expo SDK 58 app and website with Expo Router and NativeWind (colours from the wireframes).

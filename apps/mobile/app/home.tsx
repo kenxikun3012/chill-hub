@@ -1,3 +1,5 @@
+import { router } from "expo-router";
+import { Platform } from "react-native";
 import { Banner, Button, Heading, Muted, Screen } from "../src/components/ui";
 import { useSession } from "../src/lib/session";
 
@@ -16,6 +18,9 @@ export default function Home() {
         <Banner tone="ok">You're approved. Welcome to Chill Hub!</Banner>
       )}
       <Muted>Lobbies and profiles are coming next.</Muted>
+      {Platform.OS === "web" && account?.roles.includes("admin") ? (
+        <Button title="Sign-up approvals" variant="secondary" onPress={() => router.push("/admin")} />
+      ) : null}
     </Screen>
   );
 }

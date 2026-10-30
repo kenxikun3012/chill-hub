@@ -1,4 +1,4 @@
-import type { UserStatus } from "@chill-hub/shared";
+import type { RoleName, UserStatus } from "@chill-hub/shared";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, tokenStore } from "./api";
 
@@ -8,6 +8,7 @@ export interface Account {
   email: string;
   studentIdNumber: string | null;
   status: UserStatus;
+  roles: RoleName[];
   suspendedUntil: string | null;
   createdAt: string;
 }
