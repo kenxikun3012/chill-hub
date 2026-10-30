@@ -45,6 +45,7 @@ npm run db:seed
 | `npm run api:test` | Run the API end-to-end tests (needs `TEST_DATABASE_URL`) |
 | `npm run db:migrate` | Apply migrations to the dev database (creates new ones after schema changes) |
 | `npm run db:seed` | Load games catalogue and default settings |
+| `npm run db:seed:demo` | Dev only: add demo users and lobbies, and print their `x-dev-user-id` values |
 | `npm run db:studio` | Browse the database in Prisma Studio |
 | `npm run db:generate` | Regenerate the Prisma client |
 | `npm run spec:docx` | Rebuild the Word version of the spec from `SPEC.md` |

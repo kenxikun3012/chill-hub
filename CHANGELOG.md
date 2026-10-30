@@ -13,6 +13,7 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 - Consistent JSON errors; database errors mapped to 404/409/400; cursor pagination for lists.
 - Swagger UI at `/api/v1/docs`, generated from the shared Zod schemas.
 - 51 end-to-end tests (Jest + supertest) against a real PostgreSQL; refuses to run against the dev database.
+- Dev-only demo seed (`npm run db:seed:demo`): an admin, three players, a public and a private lobby.
 - Setting renamed: `max_active_lobbies_per_host` → `max_active_lobbies_per_player` (seed removes the old key).
 - Prisma client generated as CommonJS; TypeScript 6.0. Docs: [API guide](docs/api/README.md), [ADR 0003](docs/decisions/0003-api-conventions.md).
 
