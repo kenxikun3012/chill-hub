@@ -4,6 +4,13 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Step 3a, Part 2: Expo app (2026-10-30)
+
+- `apps/mobile`: Expo SDK 58 app and website with Expo Router and NativeWind (colours from the wireframes).
+- Screens: welcome, 3-step sign-up, email code with resend, log in, forgot and reset password, waiting for approval, rejected with re-apply, and a placeholder home.
+- Each account status only reaches its own screens (ACC-06). The website uses the session cookie; the app keeps a bearer token in secure storage.
+- `passwordSchema` added to `@chill-hub/shared`, which now always loads from its build output.
+
 ### Step 3a, Part 1: Authentication API (2026-10-30)
 
 - Better Auth at `/api/v1/auth`: sign-up with college-domain check, 6-digit email codes, login, logout and password reset, with login rate limiting (ACC-01, 02, 07; NFR-09).

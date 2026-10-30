@@ -5,6 +5,8 @@ import { approvalStatusSchema, roleNameSchema, userStatusSchema } from "./enums.
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 export const studentIdNumberSchema = z.string().trim().min(3).max(32);
+/** Same limits as Better Auth in the API. */
+export const passwordSchema = z.string().min(8, "At least 8 characters").max(128, "At most 128 characters");
 
 /** Admin-created account (also used by tests and dev tooling). Normal sign-up arrives in step 3a. */
 export const userCreateSchema = z.strictObject({

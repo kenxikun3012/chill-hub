@@ -10,7 +10,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 |---|---|---|
 | 1 | **Database**: MVP-1 schema, first migration, seed data, database docs | ✅ Done (2026-10-24): applied and seeded on the Neon `dev` branch |
 | 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
-| 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | 🔄 Part 1 of 3 built (API). See the [plan below](#step-3a-plan-authentication) |
+| 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | 🔄 Parts 1 and 2 of 3 built (API, app screens). See the [plan below](#step-3a-plan-authentication) |
 | 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ⬜ |
 | 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |
 | 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ⬜ |
@@ -52,7 +52,9 @@ Decided 2026-10-30. Built in three parts, each tested, documented, reviewed and 
 7. Sessions deleted on ban; approval decisions emailed (ACC-05).
 8. `admin:create` script. Auth tests log in for real; the other tests keep the dev header.
 
-**Part 2: Expo app**
+**Part 2: Expo app** (built 2026-10-30; checked on web and on Android through Expo Go; iOS not yet tried)
+
+Differences from the wireframes: the email code comes second rather than last, so nobody fills in details for an email they don't own; one game is asked for at sign-up, with more added later in the profile; reset uses a code, not a link. The student ID photo waits for its later increment. The terms checkbox and the "Contact the esports club" button wait until those pages and contact details exist.
 
 1. Create `apps/mobile` (Expo Router, NativeWind, `@chill-hub/shared` for validation) with an API client and session storage.
 2. Screens from the wireframes: 3-step sign-up, login, forgot password, and pending and rejected status pages with re-apply.
