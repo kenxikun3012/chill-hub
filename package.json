@@ -10,13 +10,27 @@
     "node": ">=22"
   },
   "scripts": {
+    "build:shared": "npm run build -w @chill-hub/shared",
+    "api:dev": "npm run dev -w @chill-hub/api",
+    "api:build": "npm run build -w @chill-hub/api",
+    "api:test": "npm test -w @chill-hub/api",
+    "api:typecheck": "npm run build:shared && npm run typecheck -w @chill-hub/api",
     "db:generate": "npm run db:generate -w @chill-hub/api",
     "db:migrate": "npm run db:migrate -w @chill-hub/api",
     "db:seed": "npm run db:seed -w @chill-hub/api",
+    "db:seed:demo": "npm run db:seed:demo -w @chill-hub/api",
+    "admin:create": "npm run admin:create -w @chill-hub/api",
     "db:studio": "npm run db:studio -w @chill-hub/api",
-    "spec:docx": "node tools/md2docx.js SPEC.md \"Chill Hub - Requirements Specification.docx\""
+    "spec:docx": "node tools/md2docx.js SPEC.md \"Chill Hub - Requirements Specification.docx\"",
+    "app:dev": "npm run start -w @chill-hub/mobile",
+    "app:web": "npm run web -w @chill-hub/mobile",
+    "app:typecheck": "npm run typecheck -w @chill-hub/mobile"
   },
   "devDependencies": {
     "docx": "^9.5.1"
+  },
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "@chill-hub/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Zod schemas, enums and types for the Chill Hub API and app",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}
