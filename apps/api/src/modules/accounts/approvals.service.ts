@@ -1,10 +1,12 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import type { ApprovalDecisionInput, ApprovalsListQuery } from "@chill-hub/shared";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import type { ApprovalDecisionInput, ApprovalsListQuery, SignUpDetailsInput } from "@chill-hub/shared";
 import type { Actor } from "../../common/auth/actor";
 import { cursorArgs, toPage } from "../../common/http/pagination";
 import { Prisma } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AuthService } from "../auth/auth.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { ProfilesService } from "../profiles/profiles.service";
 
 const REQUEST_INCLUDE = {
   user: {
@@ -27,19 +29,46 @@ export class ApprovalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly profiles: ProfilesService,
+    private readonly authService: AuthService,
   ) {}
 
-  /** A pending or rejected user asks for (re-)review. Step 3a's sign-up calls this too. */
+  /**
+   * Sign-up step 3, and fixing details after a rejection (ACC-06): saves the student ID number and
+   * an in-game ID, then joins the approval queue (ACC-03). Safe to retry if a step fails.
+   */
+  async submitDetails(actor: Actor, input: SignUpDetailsInput) {
+    await this.assertCanSubmit(actor);
+    await this.prisma.user.update({ where: { id: actor.id }, data: { studentIdNumber: input.studentIdNumber } });
+    const { gameId, ...account } = input.inGameAccount;
+    const existing = await this.prisma.inGameAccount.findUnique({ where: { userId_gameId: { userId: actor.id, gameId } } });
+    if (existing) await this.profiles.updateAccount(actor, existing.id, account);
+    else await this.profiles.createAccount(actor, input.inGameAccount);
+    return this.submit(actor);
+  }
+
+  /** A pending or rejected user asks for (re-)review, with their details already saved. */
   async submit(actor: Actor) {
+    await this.assertCanSubmit(actor);
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: actor.id },
+      select: { studentIdNumber: true, _count: { select: { inGameAccounts: true } } },
+    });
+    if (!user.studentIdNumber || !user._count.inGameAccounts) {
+      throw new BadRequestException("Add your student ID number and an in-game ID first");
+    }
+    return this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: actor.id }, data: { status: "pending" } });
+      return tx.approvalRequest.create({ data: { userId: actor.id } });
+    });
+  }
+
+  private async assertCanSubmit(actor: Actor) {
     if (actor.status !== "pending" && actor.status !== "rejected") {
       throw new ConflictException("Your account doesn't need approval");
     }
     const open = await this.prisma.approvalRequest.findFirst({ where: { userId: actor.id, status: "pending" } });
     if (open) throw new ConflictException("You already have a request waiting for review");
-    return this.prisma.$transaction(async (tx) => {
-      await tx.user.update({ where: { id: actor.id }, data: { status: "pending" } });
-      return tx.approvalRequest.create({ data: { userId: actor.id } });
-    });
   }
 
   mine(actor: Actor) {
@@ -93,6 +122,14 @@ export class ApprovalsService {
           : { type: "account_rejected", title: "We couldn't approve your account", body: rejectReason ?? "" },
         tx,
       );
+    });
+    // ACC-05: push arrives in step 3d.
+    this.authService.sendInBackground({
+      to: request.user.email,
+      subject: approve ? "You're approved on Chill Hub" : "Your Chill Hub application",
+      text: approve
+        ? "Welcome to Chill Hub. You can log in and start playing now."
+        : `We couldn't approve your account: ${rejectReason}\n\nYou can fix your details and apply again in the app.`,
     });
     return this.get(id);
   }

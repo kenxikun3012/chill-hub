@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { dateTimeSchema, paginationQuerySchema } from "./common.js";
+import { inGameAccountCreateSchema } from "./profiles.js";
 import { approvalStatusSchema, roleNameSchema, userStatusSchema } from "./enums.js";
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
@@ -33,6 +34,12 @@ export const usersListQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().min(1).max(100).optional(),
 });
 
+/** Sign-up step 3 (ACC-01); also used to fix details after a rejection. */
+export const signUpDetailsSchema = z.strictObject({
+  studentIdNumber: studentIdNumberSchema,
+  inGameAccount: inGameAccountCreateSchema,
+});
+
 /** Admin decision on a sign-up (ACC-04): a reason is required to reject. */
 export const approvalDecisionSchema = z.discriminatedUnion("decision", [
   z.strictObject({ decision: z.literal("approve") }),
@@ -47,5 +54,6 @@ export type UserCreateInput = z.infer<typeof userCreateSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type UserRolesInput = z.infer<typeof userRolesSchema>;
 export type UsersListQuery = z.infer<typeof usersListQuerySchema>;
+export type SignUpDetailsInput = z.infer<typeof signUpDetailsSchema>;
 export type ApprovalDecisionInput = z.infer<typeof approvalDecisionSchema>;
 export type ApprovalsListQuery = z.infer<typeof approvalsListQuerySchema>;

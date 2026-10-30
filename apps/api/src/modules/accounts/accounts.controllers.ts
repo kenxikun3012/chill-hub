@@ -4,12 +4,14 @@ import {
   approvalDecisionSchema,
   approvalsListQuerySchema,
   idSchema,
+  signUpDetailsSchema,
   userCreateSchema,
   userRolesSchema,
   usersListQuerySchema,
   userUpdateSchema,
   type ApprovalDecisionInput,
   type ApprovalsListQuery,
+  type SignUpDetailsInput,
   type UserCreateInput,
   type UserRolesInput,
   type UsersListQuery,
@@ -45,6 +47,12 @@ export class MeController {
   @Get("approval-requests")
   myApprovalRequests(@CurrentActor() actor: Actor) {
     return this.approvals.mine(actor);
+  }
+
+  /** Sign-up step 3, or fixing details after a rejection: saves them and joins the approval queue. */
+  @Put("sign-up-details")
+  submitSignUpDetails(@CurrentActor() actor: Actor, @Body({ schema: signUpDetailsSchema }) body: SignUpDetailsInput) {
+    return this.approvals.submitDetails(actor, body);
   }
 
   /** Ask for review again after a rejection (or the first time). */

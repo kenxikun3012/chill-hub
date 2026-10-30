@@ -17,7 +17,7 @@ describe("Health, dev auth and access rules", () => {
 
   it("rejects requests without the dev header, or with an unknown user (401)", async () => {
     const missing = await ctx.http().get(`${API}/lobbies`).expect(401);
-    expect(missing.body).toEqual({ statusCode: 401, error: "Unauthorized", message: "Missing x-dev-user-id header" });
+    expect(missing.body).toEqual({ statusCode: 401, error: "Unauthorized", message: "Please log in" });
     await ctx.http().get(`${API}/lobbies`).set(as("no-such-user")).expect(401);
   });
 

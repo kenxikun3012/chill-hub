@@ -8,8 +8,10 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { RoleName } from "@chill-hub/shared";
+import { fromNodeHeaders } from "better-auth/node";
 import type { Request } from "express";
 import { ENV, type Env } from "../../config/env";
+import { AuthService } from "../../modules/auth/auth.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { Actor } from "./actor";
 import { ALLOW_PENDING, IS_PUBLIC, REQUIRED_ROLES } from "./decorators";
@@ -17,15 +19,16 @@ import { ALLOW_PENDING, IS_PUBLIC, REQUIRED_ROLES } from "./decorators";
 export const DEV_USER_HEADER = "x-dev-user-id";
 
 /**
- * TEMPORARY (step 2): identifies the user from the x-dev-user-id header.
- * Only active when DEV_AUTH=true, which is refused in production. Replaced by Better Auth in step 3a;
- * the account-status and role rules below stay.
+ * Identifies the user from their Better Auth session (cookie on web, bearer token in the app),
+ * then applies the account-status and role rules. With DEV_AUTH=true, which is refused in production,
+ * the x-dev-user-id header also works.
  */
 @Injectable()
-export class DevAuthGuard implements CanActivate {
+export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
@@ -35,14 +38,13 @@ export class DevAuthGuard implements CanActivate {
     const allowPending = this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING, targets) ?? false;
     const roles = this.reflector.getAllAndOverride<RoleName[]>(REQUIRED_ROLES, targets) ?? [];
     const req = ctx.switchToHttp().getRequest<Request & { actor?: Actor }>();
-    const userId = req.header(DEV_USER_HEADER)?.trim();
+    const userId = await this.identify(req);
 
     if (isPublic) {
-      if (userId && this.env.DEV_AUTH) req.actor = (await this.loadActor(userId)) ?? undefined;
+      if (userId) req.actor = (await this.loadActor(userId)) ?? undefined;
       return true;
     }
-    if (!this.env.DEV_AUTH) throw new UnauthorizedException("Login is not available yet");
-    if (!userId) throw new UnauthorizedException(`Missing ${DEV_USER_HEADER} header`);
+    if (!userId) throw new UnauthorizedException("Please log in");
 
     const actor = await this.loadActor(userId);
     if (!actor) throw new UnauthorizedException("Unknown user");
@@ -53,6 +55,13 @@ export class DevAuthGuard implements CanActivate {
     }
     req.actor = actor;
     return true;
+  }
+
+  private async identify(req: Request): Promise<string | undefined> {
+    const devUserId = this.env.DEV_AUTH ? req.header(DEV_USER_HEADER)?.trim() : undefined;
+    if (devUserId) return devUserId;
+    const session = await this.authService.auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+    return session?.user.id;
   }
 
   private checkStatus(actor: Actor, allowPending: boolean, method: string) {

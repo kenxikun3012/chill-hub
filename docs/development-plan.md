@@ -10,7 +10,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 |---|---|---|
 | 1 | **Database**: MVP-1 schema, first migration, seed data, database docs | ✅ Done (2026-10-24): applied and seeded on the Neon `dev` branch |
 | 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
-| 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | ⬜ |
+| 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | 🔄 Part 1 of 3 built (API). See the [plan below](#step-3a-plan-authentication) |
 | 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ⬜ |
 | 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |
 | 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ⬜ |
@@ -41,7 +41,7 @@ Decided 2026-10-30. Built in three parts, each tested, documented, reviewed and 
 | Rejected applicants | Same account: see the reason, fix details, submit a new approval request; history is kept |
 | App styling | NativeWind |
 
-**Part 1: Better Auth in the API**
+**Part 1: Better Auth in the API** (built 2026-10-30, see [ADR 0004](decisions/0004-authentication.md))
 
 1. Spike first: confirm Better Auth runs inside the CommonJS NestJS app and maps onto the existing `sessions`, `auth_accounts` and `verifications` tables.
 2. Migration: make `users.student_id_number` nullable, because the account exists before sign-up step 3. It stays unique, and an approval request can't be submitted without it.
@@ -50,7 +50,7 @@ Decided 2026-10-30. Built in three parts, each tested, documented, reviewed and 
 5. Sign-up completion endpoint: student ID number and in-game ID, then the account joins the approval queue (ACC-03).
 6. Real session guard replaces `DevAuthGuard`, keeping its status and role rules. Cookies on web, bearer tokens on the app.
 7. Sessions deleted on ban; approval decisions emailed (ACC-05).
-8. `admin:create` script. Tests log in for real or keep a test-only sign-in; decided in the spike.
+8. `admin:create` script. Auth tests log in for real; the other tests keep the dev header.
 
 **Part 2: Expo app**
 
