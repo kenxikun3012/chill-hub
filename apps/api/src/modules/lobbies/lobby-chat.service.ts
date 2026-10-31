@@ -3,12 +3,18 @@ import type { ChatMessagesListQuery } from "@chill-hub/shared";
 import type { Actor } from "../../common/auth/actor";
 import { cursorArgs, toPage } from "../../common/http/pagination";
 import { PrismaService } from "../../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { RealtimeBus } from "../realtime/realtime-bus";
 import { isActiveStatus } from "./lobby.presenter";
 
-/** Lobby chat (LOB-11): members only, read-only once the lobby has ended. Real-time delivery arrives in step 3d. */
+/** Lobby chat (LOB-11): members only, read-only once the lobby has ended. New messages are signalled live; push is opt-in. */
 @Injectable()
 export class LobbyChatService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+    private readonly bus: RealtimeBus,
+  ) {}
 
   /** Newest first; use nextCursor to load older messages. */
   async list(lobbyId: string, q: ChatMessagesListQuery, actor: Actor) {
@@ -36,6 +42,14 @@ export class LobbyChatService {
     const m = await this.prisma.chatMessage.create({
       data: { lobbyId, senderId: actor.id, kind: "user", body },
       include: { sender: { select: { id: true, profile: { select: { displayName: true, avatarUrl: true } } } } },
+    });
+    this.bus.chatMessage(lobbyId);
+    const members = await this.prisma.lobbyMember.findMany({ where: { lobbyId, leftAt: null, userId: { not: actor.id } }, select: { userId: true } });
+    await this.notifications.notify(members.map((member) => member.userId), {
+      type: "chat_message",
+      title: "New lobby message",
+      body: `${m.sender?.profile?.displayName ?? "A player"}: ${body.slice(0, 120)}`,
+      data: { lobbyId },
     });
     return {
       id: m.id,

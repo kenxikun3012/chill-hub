@@ -85,6 +85,25 @@ Better Auth runs inside the API at `/api/v1/auth` (see [ADR 0004](../decisions/0
 
 **Production settings:** `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`, `RESEND_API_KEY` and `MAIL_FROM` are required, or the API refuses to start. Run the API behind Caddy with its port closed to the internet, because rate limiting trusts `x-forwarded-for`.
 
+## Live updates
+
+Connect with Socket.IO to the server's root (not `/api/v1`). Web sends its session cookie; the app passes `auth: { token }`. Events only say what changed, and clients reload through the API, so lobby codes and messages never travel over the socket.
+
+| Event | Who gets it | Means |
+|---|---|---|
+| `notifications:changed` | That user | The inbox has something new |
+| `lobbies:changed` | Approved players | Reload the lobby list |
+| `lobby:changed` `{ lobbyId }` | Watchers of that lobby | Reload that lobby |
+| `chat:message` `{ lobbyId }` | Watchers of that lobby | Reload its chat, which only members can do |
+
+Send `lobby:watch` or `lobby:unwatch` with a lobby ID to start or stop watching. Staff and unapproved users are ignored. Rooms live in the API process, so a second API server would need a shared Socket.IO adapter.
+
+## Delivery and scheduled jobs
+
+Notifications are stored first, then delivered within about a second by live signal, push (through Expo) and email, according to each user's preferences. Each is attempted once. Chat is push only and opt-in, with no inbox item.
+
+`LobbyJobsService` handles lobby expiry, start reminders and chat clean-up. It works out when the next job is due and sleeps until then, at most 6 hours, so an idle app doesn't keep a Neon database awake. Set `JOBS_ENABLED=false` to turn it off.
+
 ## 4. Access rules
 
 Applied to every request by the guard (`src/common/auth/dev-auth.guard.ts`):
@@ -203,7 +222,7 @@ Real-time delivery (WebSocket events, push and email) is **not** in this step. T
 
 ## 7. Testing
 
-The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 84 tests in 8 files, covering every rule in section 6.
+The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 98 tests in 9 files, covering every rule in section 6.
 
 **Setup (once):** in Neon, create a branch called `test` (from `dev`), then add to `apps/api/.env`:
 

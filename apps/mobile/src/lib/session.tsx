@@ -1,6 +1,7 @@
 import type { RoleName, UserStatus } from "@chill-hub/shared";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, tokenStore } from "./api";
+import { unregisterPush } from "./push";
 
 export interface Account {
   id: string;
@@ -87,6 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await refresh();
       },
       logOut: async () => {
+        await unregisterPush();
         await api("/auth/sign-out", { method: "POST", body: {} }).catch(() => undefined);
         await tokenStore.clear();
         setAccount(null);

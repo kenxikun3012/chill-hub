@@ -5,6 +5,7 @@ import { ChipGroup, LobbyCard, toOptions } from "../../src/components/lobby";
 import { Banner, Button, Chip, Muted, Screen } from "../../src/components/ui";
 import { api, errorMessage } from "../../src/lib/api";
 import type { Lobby, LobbyGame, Page } from "../../src/lib/lobby";
+import { useLiveReload } from "../../src/lib/realtime";
 
 type Voice = "on" | "off";
 type When = "soon" | "later";
@@ -68,6 +69,8 @@ export default function Lobbies() {
       void load();
     }, [load]),
   );
+
+  useLiveReload(["lobbies:changed"], () => void load(), 500);
 
   async function refresh() {
     setRefreshing(true);
@@ -148,7 +151,7 @@ export default function Lobbies() {
       ))}
       {loaded && !lobbies.length && !error ? <Muted center>No open lobbies match. Why not create one?</Muted> : null}
       {nextCursor ? <Button title="Load more" variant="secondary" onPress={loadMore} /> : null}
-      {lobbies.length ? <Muted center>Full lobbies are hidden. Pull down or reopen this tab to refresh.</Muted> : null}
+      {lobbies.length ? <Muted center>Full lobbies are hidden.</Muted> : null}
     </Screen>
   );
 }

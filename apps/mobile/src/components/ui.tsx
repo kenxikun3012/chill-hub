@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState, type ReactNode } from "react";
 import {
@@ -13,6 +14,7 @@ import {
   type TextInputProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRealtime } from "../lib/realtime";
 
 /** A page: safe area, keyboard handling, scrolling, and a phone-width column on large web screens. */
 export function Screen({
@@ -65,6 +67,26 @@ export function Screen({
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/** Opens the inbox, showing the unread count (NOT-04). */
+export function NotificationBell() {
+  const { unread } = useRealtime();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={unread ? `Notifications, ${unread} unread` : "Notifications"}
+      onPress={() => router.push("/notifications")}
+      className="h-11 w-11 items-center justify-center"
+    >
+      <Ionicons name="notifications-outline" size={24} color="#1f1f1f" />
+      {unread ? (
+        <View className="absolute right-0.5 top-0.5 h-5 min-w-5 items-center justify-center rounded-full bg-bad px-1">
+          <Text className="text-xs font-bold text-white">{unread > 99 ? "99+" : unread}</Text>
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 

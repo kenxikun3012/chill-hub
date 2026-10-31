@@ -1,12 +1,22 @@
 import "../global.css";
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, Platform, View } from "react-native";
+import { listenForPush, registerForPush } from "../src/lib/push";
+import { RealtimeProvider } from "../src/lib/realtime";
 import { isStaffAccount, SessionProvider, useSession } from "../src/lib/session";
 
 /** Each account stage only reaches its own screens (ACC-06); moving between stages redirects automatically. */
 function Routes() {
   const { stage, account } = useSession();
+  const approved = stage === "approved";
+
+  useEffect(() => listenForPush(), []);
+  useEffect(() => {
+    if (approved) void registerForPush().catch(() => undefined); // the app works without push
+  }, [approved]);
+
   // The admin panel is a website only. The API checks the role on every request too.
   const isAdmin = Platform.OS === "web" && stage === "approved" && !!account?.roles.includes("admin");
   if (stage === "loading") {
@@ -42,6 +52,8 @@ function Routes() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="players/[id]" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="notification-settings" />
       </Stack.Protected>
       <Stack.Protected guard={stage === "approved" && !isStaffAccount(account)}>
         <Stack.Screen name="lobby/[id]" />
@@ -58,7 +70,9 @@ export default function RootLayout() {
   return (
     <SessionProvider>
       <StatusBar style="dark" />
-      <Routes />
+      <RealtimeProvider>
+        <Routes />
+      </RealtimeProvider>
     </SessionProvider>
   );
 }

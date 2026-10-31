@@ -7,6 +7,7 @@ import { DEV_USER_HEADER } from "./common/auth/auth.guard";
 import { API_PREFIX } from "./common/http/api-prefix";
 import type { Env } from "./config/env";
 import { AuthService } from "./modules/auth/auth.service";
+import { CorsIoAdapter } from "./modules/realtime/cors-io.adapter";
 
 export { API_PREFIX };
 
@@ -25,6 +26,7 @@ export function configureApp(app: INestApplication, env: Env) {
     if (req.path.startsWith(authPath)) void authHandler(req, res);
     else next();
   });
+  app.useWebSocketAdapter(new CorsIoAdapter(app, env.CORS_ORIGINS.split(",").map((o) => o.trim())));
   app.enableShutdownHooks();
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalPipes(

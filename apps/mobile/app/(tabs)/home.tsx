@@ -1,8 +1,9 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Platform, Text } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { LobbyCard } from "../../src/components/lobby";
-import { Banner, Button, Heading, Muted, Screen } from "../../src/components/ui";
+import { Banner, Button, Heading, Muted, NotificationBell, Screen } from "../../src/components/ui";
+import { useLiveReload } from "../../src/lib/realtime";
 import { api, errorMessage } from "../../src/lib/api";
 import type { Lobby, Page } from "../../src/lib/lobby";
 import { isStaffAccount, useSession } from "../../src/lib/session";
@@ -14,20 +15,29 @@ export default function Home() {
   const [lobbies, setLobbies] = useState<Lobby[]>();
   const [error, setError] = useState<string>();
 
-  useFocusEffect(
-    useCallback(() => {
-      if (staff) return;
-      api<Page<Lobby>>("/lobbies?mine=true")
-        .then((page) => {
-          setLobbies(page.items);
-          setError(undefined);
-        })
-        .catch((err) => setError(errorMessage(err)));
-    }, [staff]),
-  );
+  const load = useCallback(() => {
+    if (staff) return;
+    api<Page<Lobby>>("/lobbies?mine=true")
+      .then((page) => {
+        setLobbies(page.items);
+        setError(undefined);
+      })
+      .catch((err) => setError(errorMessage(err)));
+  }, [staff]);
+
+  useFocusEffect(load);
+  useLiveReload(["lobbies:changed"], load, 500);
 
   return (
-    <Screen title="Chill Hub" right={<Button title="Log out" variant="ghost" onPress={logOut} />}>
+    <Screen
+      title="Chill Hub"
+      right={
+        <View className="flex-row items-center">
+          <NotificationBell />
+          <Button title="Log out" variant="ghost" onPress={logOut} />
+        </View>
+      }
+    >
       <Heading>Hi, {account?.profile?.displayName}</Heading>
       {account?.status === "suspended" ? (
         <Banner tone="bad">

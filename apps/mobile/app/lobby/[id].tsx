@@ -6,10 +6,8 @@ import { Avatar } from "../../src/components/profile";
 import { Banner, Button, Chip, Muted, Screen } from "../../src/components/ui";
 import { api, errorMessage } from "../../src/lib/api";
 import { isActive, rankRange, startLabel, type ChatMessage, type JoinRequest, type LobbyDetail, type Page } from "../../src/lib/lobby";
+import { useLiveReload, useWatchLobby } from "../../src/lib/realtime";
 import { useSession } from "../../src/lib/session";
-
-const LOBBY_REFRESH_MS = 10_000;
-const CHAT_REFRESH_MS = 5_000;
 
 function CodeBar({ code, visibility }: { code: string | null; visibility: string }) {
   const [copied, setCopied] = useState(false);
@@ -65,18 +63,16 @@ function Chat({ lobbyId, readOnly }: { lobbyId: string; readOnly: boolean }) {
       merge(page.items);
       setOlderCursor((c) => c ?? page.nextCursor);
     } catch {
-      // The next refresh tries again; sending shows its own errors.
+      // The next change or reconnect tries again; sending shows its own errors.
     }
   }, [lobbyId, merge]);
 
   useFocusEffect(
     useCallback(() => {
       void poll();
-      if (readOnly) return;
-      const timer = setInterval(poll, CHAT_REFRESH_MS);
-      return () => clearInterval(timer);
-    }, [poll, readOnly]),
+    }, [poll]),
   );
+  useLiveReload(["chat:message"], () => void poll());
 
   async function loadOlder() {
     if (!olderCursor) return;
@@ -183,10 +179,10 @@ export default function LobbyPage() {
   useFocusEffect(
     useCallback(() => {
       void load();
-      const timer = setInterval(load, LOBBY_REFRESH_MS);
-      return () => clearInterval(timer);
     }, [load]),
   );
+  useWatchLobby(id);
+  useLiveReload(["lobby:changed"], () => void load());
 
   const inLobby = !!lobby && (lobby.viewer.isMember || lobby.viewer.isHost);
   useEffect(() => {

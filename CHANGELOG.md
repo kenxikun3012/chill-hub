@@ -4,6 +4,14 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Step 3d: Real-time notifications (2026-10-31)
+
+- Socket.IO: lobby list, lobby page, chat and the unread count update live, replacing the timed refreshes. Events only signal what changed (NFR-02, NFR-06).
+- Inbox with unread badge and mark all read, and notification settings with Push, Email and In-app switches (NOT-03, NOT-04).
+- Delivery by push (through Expo) and email, according to preferences (NOT-01). Android push needs a development build: see [the setup guide](docs/mobile/push-setup.md).
+- Lobby expiry, start reminders and chat clean-up, on a timer that sleeps until the next job is due (LOB-09, 11, 12). Spec v0.9.
+- Migration `20261031120000_notification_delivery`. Chat no longer creates inbox items.
+
 ### Staff accounts and lobbies (2026-10-30)
 
 - Moderators and admins can't find, create, join or chat in lobbies, even with the player role. The API refuses them, and the app hides the Lobbies and Create tabs and My lobbies. Spec v0.8.

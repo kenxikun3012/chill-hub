@@ -33,6 +33,8 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    // Sockets are identified once, when they connect (see RealtimeGateway).
+    if (ctx.getType() !== "http") return true;
     const targets = [ctx.getHandler(), ctx.getClass()];
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets) ?? false;
     const allowPending = this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING, targets) ?? false;

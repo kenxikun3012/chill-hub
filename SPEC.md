@@ -4,7 +4,7 @@
 |---|---|
 | **Product** | Chill Hub (working name): college gaming hub |
 | **Platforms** | Website, Android app, iOS app, Admin web panel |
-| **Version** | 0.8 (draft): Moderators and Admins can't use lobbies; lobbies can be scheduled up to 24 hours ahead |
+| **Version** | 0.9 (draft): scheduled jobs run inside the API, without Redis; chat alerts are push only and opt-in |
 | **Date** | 2026-10-15 |
 | **Owner** | College esports club |
 | **Status** | Draft for review |
@@ -185,7 +185,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 | ID | Requirement | Priority |
 |---|---|---|
 | NOT-01 | The system sends notifications through three channels: **push** (mobile), **email** and an **in-app inbox** (notification bell on web and mobile). | MVP |
-| NOT-02 | Events that trigger notifications include: account approved/rejected; lobby join request; request accepted/declined; lobby code changed; lobby starting soon; new lobby chat message; answer to your question; report resolved; tournament events (P2). | MVP |
+| NOT-02 | Events that trigger notifications include: account approved/rejected; lobby join request; request accepted/declined; lobby code changed; lobby starting soon; new lobby chat message (push only, and off unless the player turns it on; chat itself stays in the lobby, not the inbox); answer to your question; report resolved; tournament events (P2). | MVP |
 | NOT-03 | Users can turn each notification type on or off per channel. Account and security emails cannot be turned off. | MVP |
 | NOT-04 | The in-app inbox shows unread count and lets users mark all as read. | MVP |
 
@@ -249,7 +249,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 | Authentication | **Better Auth** inside the NestJS API | Email + password, college-domain email verification, password reset, sessions. Users, roles and Pending/Approved/Rejected status stored in Postgres. |
 | Real-time | **Socket.IO** (NestJS WebSocket gateway) | Lobby chat, live lobby list and slots, code-change alerts, live brackets. Runs on the always-on VPS, so connections never sleep. A Redis adapter is added once more than one API instance runs. |
 | File storage | **Cloudflare R2** (S3-compatible) | Private bucket for student ID photos with short-lived signed URLs (NFR-07); public bucket for avatars and guide images |
-| Scheduled jobs | **BullMQ** with Redis on the VPS | Lobby expiry, start reminders, chat clean-up after 7 days, ID photo deletion after 30 days |
+| Scheduled jobs | A timer inside the NestJS API, with no Redis (BullMQ can replace it if a second API server is added). It sleeps until the next job is due, so it doesn't keep a Neon database awake | Lobby expiry, start reminders, chat clean-up after 7 days, ID photo deletion after 30 days |
 | Push | Expo Push Notifications (FCM/APNs) | |
 | Email | Transactional email service (e.g. Resend) | |
 | Hosting | **Low-cost VPS** (about US$2/month, at least 1 GB RAM, e.g. IONOS VPS XS) running Docker Compose: NestJS API, Redis, Caddy (automatic HTTPS) and, in Option 1, PostgreSQL. Expo web build on **Cloudflare Pages** (free). App Store / Google Play via EAS Submit. | Always on, so WebSockets and scheduled jobs never sleep. Fixed monthly price. The team is responsible for OS security updates and backups (see 5.1). Renewal prices can be higher than the first term, so check before buying. |
