@@ -1,7 +1,8 @@
 import { displayNameSchema } from "@chill-hub/shared";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "../src/components/text";
 import { Avatar } from "../src/components/profile";
 import { Banner, Button, Chip, Field, Muted, Screen } from "../src/components/ui";
 import { api, errorMessage } from "../src/lib/api";
@@ -59,7 +60,7 @@ function GameEditor({
   }
 
   return (
-    <View className="gap-3 rounded-[10px] border border-line bg-white p-3">
+    <View className="gap-3 rounded-[10px] border border-line bg-card p-3">
       <View className="flex-row items-center justify-between gap-2">
         <Text accessibilityRole="header" className="flex-1 font-semibold text-ink">
           {game.name}

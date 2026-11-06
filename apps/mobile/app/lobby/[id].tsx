@@ -1,36 +1,54 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, TextInput, View } from "react-native";
+import { Text } from "../../src/components/text";
 import { Avatar } from "../../src/components/profile";
-import { Banner, Button, Chip, Muted, Screen } from "../../src/components/ui";
+import { ChamferPanel, ScrambleText } from "../../src/components/motion";
+import { Banner, Button, Chip, Muted, Screen, SlotBar } from "../../src/components/ui";
 import { api, errorMessage } from "../../src/lib/api";
 import { isActive, rankRange, startLabel, type ChatMessage, type JoinRequest, type LobbyDetail, type Page } from "../../src/lib/lobby";
 import { useLiveReload, useWatchLobby } from "../../src/lib/realtime";
 import { useSession } from "../../src/lib/session";
+import { useColors } from "../../src/lib/theme";
 
-function CodeBar({ code, visibility }: { code: string | null; visibility: string }) {
+function CodeBar({ code, visibility, waiting }: { code: string | null; visibility: string; waiting: boolean }) {
   const [copied, setCopied] = useState(false);
+  const colors = useColors();
   if (!code) {
-    return <Banner>🔒 The code is shown after the host accepts you.</Banner>;
-  }
-  return (
-    <View className="flex-row items-center gap-2 rounded-[10px] bg-accent-soft p-3">
-      <View className="flex-1">
-        <Muted>Lobby code · {visibility}</Muted>
-        <Text selectable className="font-mono text-lg font-bold text-ink">
-          {code}
+    return (
+      <View className="flex-row items-center gap-2 rounded-[10px] bg-raised px-3 py-3">
+        <Ionicons name="lock-closed-outline" size={18} color={colors.muted} />
+        <Text className="flex-1 text-sm text-muted">
+          {waiting ? "Lobby codes are shown after an admin approves your account." : "The code is shown after the host accepts you."}
         </Text>
       </View>
-      <Button
-        title={copied ? "Copied" : "Copy"}
-        variant="secondary"
+    );
+  }
+  return (
+    <ChamferPanel fill={colors.accent} sweep>
+    <View className="flex-row items-center gap-3 px-5 py-4">
+      <View className="flex-1">
+        <Text className="text-sm font-semibold text-on-accent">Lobby code · {visibility}</Text>
+        <ScrambleText text={code} className="font-mono text-3xl font-bold tracking-widest text-on-accent" />
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={copied ? "Code copied" : "Copy lobby code"}
         onPress={async () => {
           await Clipboard.setStringAsync(code);
           setCopied(true);
         }}
-      />
+        className="min-h-[44px] flex-row items-center gap-1.5 rounded-[10px] bg-white px-4"
+      >
+        <Ionicons name={copied ? "checkmark" : "copy-outline"} size={18} color="#6d3fe0" />
+        <Text className="font-bold" style={{ color: "#6d3fe0" }}>
+          {copied ? "Copied" : "Copy"}
+        </Text>
+      </Pressable>
     </View>
+    </ChamferPanel>
   );
 }
 
@@ -42,6 +60,7 @@ function ConfirmButton({ title, confirm, onConfirm, primary }: { title: string; 
 
 function Chat({ lobbyId, readOnly }: { lobbyId: string; readOnly: boolean }) {
   const { account } = useSession();
+  const colors = useColors();
   const [messages, setMessages] = useState<ChatMessage[]>([]); // oldest first
   const [olderCursor, setOlderCursor] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -125,9 +144,9 @@ function Chat({ lobbyId, readOnly }: { lobbyId: string; readOnly: boolean }) {
           }
           const mine = m.sender.userId === account?.id;
           return (
-            <View key={m.id} className={`max-w-[85%] gap-0.5 rounded-[10px] p-2 ${mine ? "self-end bg-accent-soft" : "self-start border border-line bg-white"}`}>
+            <View key={m.id} className={`max-w-[85%] gap-0.5 rounded-[10px] p-2 ${mine ? "self-end bg-accent" : "self-start border border-line bg-card"}`}>
               {mine ? null : <Text className="text-xs font-semibold text-muted">{m.sender.displayName ?? "Player"}</Text>}
-              <Text selectable className="text-ink">
+              <Text selectable className={mine ? "text-on-accent" : "text-ink"}>
                 {m.body}
               </Text>
             </View>
@@ -142,12 +161,13 @@ function Chat({ lobbyId, readOnly }: { lobbyId: string; readOnly: boolean }) {
           <TextInput
             accessibilityLabel="Message the lobby"
             placeholder="Message the lobby…"
-            placeholderTextColor="#9a9a9a"
+            placeholderTextColor={colors.muted}
+            style={{ fontFamily: "Barlow_400Regular" }}
             value={text}
             onChangeText={setText}
             onSubmitEditing={send}
             maxLength={1000}
-            className="min-h-[48px] flex-1 rounded-[10px] border border-line bg-white px-3 text-base text-ink"
+            className="min-h-[48px] flex-1 rounded-[10px] border border-line bg-card px-3 text-base text-ink"
           />
           <Button title="Send" onPress={send} busy={sending} disabled={!text.trim()} />
         </View>
@@ -159,7 +179,8 @@ function Chat({ lobbyId, readOnly }: { lobbyId: string; readOnly: boolean }) {
 /** One lobby: everything a visitor, member or host can see and do (LOB-04, 05, 07, 10, 11). */
 export default function LobbyPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { account } = useSession();
+  const { account, stage } = useSession();
+  const waiting = stage === "pending"; // can look, but not join or see codes (ACC-06)
   const [lobby, setLobby] = useState<LobbyDetail>();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [tab, setTab] = useState<"details" | "chat">("details");
@@ -227,7 +248,7 @@ export default function LobbyPage() {
     return (
       <Screen title={title} back fixed>
         {tabs}
-        {active ? <CodeBar code={lobby.lobbyCode} visibility={lobby.visibility} /> : null}
+        {active ? <CodeBar code={lobby.lobbyCode} visibility={lobby.visibility} waiting={waiting} /> : null}
         <Chat lobbyId={lobby.id} readOnly={!active} />
       </Screen>
     );
@@ -237,8 +258,9 @@ export default function LobbyPage() {
     <Screen title={title} back>
       {tabs}
       {error ? <Banner tone="bad">{error}</Banner> : null}
+      {waiting ? <Banner>Waiting for approval. You can look around, but you can't join a lobby yet.</Banner> : null}
       {active ? (
-        <CodeBar code={lobby.lobbyCode} visibility={lobby.visibility} />
+        <CodeBar code={lobby.lobbyCode} visibility={lobby.visibility} waiting={waiting} />
       ) : (
         <Banner tone="bad">This lobby has {lobby.status === "expired" ? "expired" : "closed"}. Its code is no longer shown.</Banner>
       )}
@@ -248,16 +270,16 @@ export default function LobbyPage() {
 
       {isHost && requests.length ? (
         <View className="gap-2">
-          <Text accessibilityRole="header" className="text-sm font-semibold uppercase tracking-wide text-muted">
+          <Text accessibilityRole="header" className="font-display text-xs uppercase tracking-widest text-muted">
             Join requests ({requests.length})
           </Text>
           {requests.map((r) => {
             const a = r.player.inGameAccount;
-            const about = [a?.rank?.name, a?.preferredRoles.map((role) => role.name).join(", "), r.player.reputation ? `👍 ${r.player.reputation.good}` : null, r.player.reputation?.noShow ? `${r.player.reputation.noShow} no-shows` : null]
+            const about = [a?.rank?.name, a?.preferredRoles.map((role) => role.name).join(", "), r.player.reputation ? `${r.player.reputation.good} thumbs-up` : null, r.player.reputation?.noShow ? `${r.player.reputation.noShow} no-shows` : null]
               .filter(Boolean)
               .join(" · ");
             return (
-              <View key={r.id} className="gap-2 rounded-[10px] border border-line bg-white p-3">
+              <View key={r.id} className="gap-2 rounded-[10px] border border-line bg-card p-3">
                 <Text className="font-semibold text-ink" onPress={() => router.push(`/players/${r.player.userId}`)}>
                   {r.player.displayName ?? "Player"}
                 </Text>
@@ -272,10 +294,13 @@ export default function LobbyPage() {
         </View>
       ) : null}
 
-      <View className="gap-2 rounded-[10px] border border-line bg-white p-3">
-        <Text className="font-semibold text-ink">
-          Players {lobby.memberCount}/{lobby.capacity}
-        </Text>
+      <View className="gap-2 rounded-[10px] border border-line bg-card p-3">
+        <View className="flex-row items-center justify-between">
+          <Text className="font-bold text-ink">
+            Players {lobby.memberCount}/{lobby.capacity}
+          </Text>
+          <SlotBar taken={lobby.memberCount} total={lobby.capacity} />
+        </View>
         {lobby.members.map((m) => {
           const name = m.displayName ?? "Player";
           const you = m.userId === account?.id;
@@ -307,10 +332,10 @@ export default function LobbyPage() {
       <Muted>Voice: {lobby.voiceChat ? "On" : "No voice"}</Muted>
       {lobby.note ? <Muted>Note: {lobby.note}</Muted> : null}
 
-      {active && !inLobby && lobby.visibility === "public" ? (
+      {active && !waiting && !inLobby && lobby.visibility === "public" ? (
         <Button title={hasSlot ? "Take a slot" : "Lobby is full"} disabled={!hasSlot} busy={busy} onPress={() => act(() => api(`/lobbies/${id}/members`, { method: "POST" }))} />
       ) : null}
-      {active && !inLobby && lobby.visibility === "private" ? (
+      {active && !waiting && !inLobby && lobby.visibility === "private" ? (
         lobby.viewer.joinRequestStatus === "pending" && lobby.viewer.joinRequestId ? (
           <>
             <Banner>Request sent. Waiting for the host.</Banner>

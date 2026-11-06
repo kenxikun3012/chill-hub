@@ -1,11 +1,12 @@
 import { Redirect, router, type Href } from "expo-router";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "../src/components/text";
 import { Button, Heading, Muted, Screen } from "../src/components/ui";
 import { useSession, type Stage } from "../src/lib/session";
 
 const STAGE_SCREENS: Record<Exclude<Stage, "loading" | "guest">, Href> = {
   details: "/sign-up-details",
-  pending: "/pending",
+  pending: "/home",
   rejected: "/rejected",
   setup: "/setup-profile",
   approved: "/home",
@@ -20,7 +21,7 @@ export default function Index() {
     <Screen>
       <View className="grow items-center justify-center gap-3">
         <View className="h-24 w-24 items-center justify-center rounded-3xl bg-accent">
-          <Text className="text-3xl font-bold text-white">CH</Text>
+          <Text className="text-3xl font-bold text-on-accent">CH</Text>
         </View>
         <Heading>Chill Hub</Heading>
         <Muted center>Find teammates. Share game knowledge. Play together on campus.</Muted>

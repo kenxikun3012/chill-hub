@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Pressable, useWindowDimensions, View } from "react-native";
+import { Text } from "../src/components/text";
 import { Banner, Button, Chip, Field, Heading, Muted, Screen } from "../src/components/ui";
 import { api, errorMessage } from "../src/lib/api";
 import type { ApprovalRequest } from "../src/lib/session";
@@ -69,7 +70,7 @@ function RequestPanel({ request, onDecided }: { request: QueueItem; onDecided: (
   }
 
   return (
-    <View className="gap-4 rounded-[10px] border border-line bg-white p-4">
+    <View className="gap-4 rounded-[10px] border border-line bg-card p-4">
       <Text className="text-lg font-semibold text-ink">{request.user.name}</Text>
       {request.user.emailVerified ? <Banner tone="ok">Email verified</Banner> : <Banner tone="bad">Email not verified</Banner>}
       <Detail label="Student ID number" value={request.user.studentIdNumber ?? "Not given"} />
@@ -103,6 +104,47 @@ function RequestPanel({ request, onDecided }: { request: QueueItem; onDecided: (
           </Muted>
         </>
       )}
+    </View>
+  );
+}
+
+/** The club's join code: students need it to sign up (ACC-01). Saving it empty switches the requirement off. */
+function JoinCodeCard() {
+  const [code, setCode] = useState("");
+  const [saved, setSaved] = useState<string>();
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api<{ value: string }>("/settings/signup_join_code")
+      .then((setting) => {
+        setCode(setting.value);
+        setSaved(setting.value);
+      })
+      .catch((err) => setError(errorMessage(err)));
+  }, []);
+
+  async function save() {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const setting = await api<{ value: string }>("/settings/signup_join_code", { method: "PUT", body: { value: code.trim() } });
+      setCode(setting.value);
+      setSaved(setting.value);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <View className="gap-2 rounded-[10px] border border-line bg-card p-3">
+      <Text className="font-semibold text-ink">Club join code</Text>
+      <Muted>Students need this code to sign up. Share it in the club chat. Leave it empty to let anyone start a sign-up.</Muted>
+      {error ? <Banner tone="bad">{error}</Banner> : null}
+      <Field label="Code" value={code} onChangeText={setCode} maxLength={40} autoCapitalize="none" autoCorrect={false} />
+      <Button title="Save code" onPress={save} busy={busy} disabled={saved === undefined || code.trim() === saved} />
     </View>
   );
 }
@@ -174,7 +216,7 @@ export default function AdminApprovals() {
                 accessibilityLabel={`Review ${r.user.name}`}
                 accessibilityState={{ selected: r.id === selectedId }}
                 onPress={() => setSelectedId(r.id)}
-                className={`gap-0.5 rounded-[10px] border p-3 ${r.id === selectedId ? "border-accent bg-accent-soft" : "border-line bg-white"}`}
+                className={`gap-0.5 rounded-[10px] border p-3 ${r.id === selectedId ? "border-accent bg-accent-soft" : "border-line bg-card"}`}
               >
                 <Text className="font-semibold text-ink">{r.user.name}</Text>
                 <Muted>
@@ -190,6 +232,7 @@ export default function AdminApprovals() {
         </View>
         {split ? <View className="flex-1">{panel}</View> : null}
       </View>
+      <JoinCodeCard />
       <Button title="Back to home" variant="ghost" onPress={() => router.replace("/home")} />
     </Screen>
   );

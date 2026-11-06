@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "../src/components/text";
 import { Banner, Button, Muted, Screen } from "../src/components/ui";
 import { api, errorMessage } from "../src/lib/api";
 import type { Page } from "../src/lib/lobby";
@@ -92,7 +93,7 @@ export default function Notifications() {
           accessibilityRole="button"
           accessibilityLabel={`${n.readAt ? "" : "Unread: "}${n.title}. ${n.body}`}
           onPress={() => void open(n)}
-          className={`gap-0.5 rounded-[10px] border p-3 ${n.readAt ? "border-line bg-white" : "border-accent bg-accent-soft"}`}
+          className={`gap-0.5 rounded-[10px] border p-3 ${n.readAt ? "border-line bg-card" : "border-accent bg-accent-soft"}`}
         >
           <Text className={n.readAt ? "text-ink" : "font-semibold text-ink"}>{n.title}</Text>
           {n.body ? <Muted>{n.body}</Muted> : null}

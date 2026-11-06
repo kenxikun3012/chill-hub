@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Switch, Text, View } from "react-native";
+import { Switch, View } from "react-native";
+import { Text } from "../src/components/text";
 import { Banner, Muted, Screen } from "../src/components/ui";
 import { api, errorMessage } from "../src/lib/api";
 import { isStaffAccount, useSession } from "../src/lib/session";
+import { useColors } from "../src/lib/theme";
 
 type Channel = "push" | "email" | "inApp";
 
@@ -27,6 +29,7 @@ const ALL_CHANNELS: Channel[] = ["push", "email", "inApp"];
 
 /** One switch per channel for each group (NOT-03). */
 export default function NotificationSettings() {
+  const colors = useColors();
   const { account } = useSession();
   const [preferences, setPreferences] = useState<Preference[]>();
   const [error, setError] = useState<string>();
@@ -60,7 +63,7 @@ export default function NotificationSettings() {
         .map((p) => {
           const group = GROUPS[p.group]!;
           return (
-            <View key={p.group} className="gap-2 rounded-[10px] border border-line bg-white p-3">
+            <View key={p.group} className="gap-2 rounded-[10px] border border-line bg-card p-3">
               <Text accessibilityRole="header" className="font-semibold text-ink">
                 {group.title}
               </Text>
@@ -73,7 +76,7 @@ export default function NotificationSettings() {
                       value={p[channel]}
                       disabled={p.locked}
                       onValueChange={(value) => void toggle(p, channel, value)}
-                      trackColor={{ true: "#4f46e5" }}
+                      trackColor={{ true: colors.accent }}
                     />
                     <Text className="text-sm text-ink">{CHANNEL_LABELS[channel]}</Text>
                   </View>

@@ -1,3 +1,62 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Arena colours as "R G B" so Tailwind can add opacity. Light first; dark follows the phone. */
+:root {
+  --c-page: 243 244 250;
+  --c-card: 255 255 255;
+  --c-raised: 236 238 250;
+  --c-line: 217 220 239;
+  --c-ink: 18 20 42;
+  --c-muted: 86 92 125;
+  --c-accent: 109 63 224;
+  --c-accent-text: 109 63 224;
+  --c-accent-soft: 236 230 255;
+  --c-soft-text: 75 35 181;
+  --c-on-accent: 255 255 255;
+  --c-ok: 14 116 144;
+  --c-ok-soft: 224 242 246;
+  --c-warn: 161 98 7;
+  --c-bad: 198 40 40;
+  --c-bad-soft: 253 236 234;
+  --c-bad-solid: 198 40 40;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-page: 11 13 23;
+    --c-card: 21 24 41;
+    --c-raised: 30 34 56;
+    --c-line: 42 47 74;
+    --c-ink: 238 240 251;
+    --c-muted: 154 161 194;
+    --c-accent: 124 76 232;
+    --c-accent-text: 167 139 250;
+    --c-accent-soft: 42 33 80;
+    --c-soft-text: 201 184 255;
+    --c-on-accent: 255 255 255;
+    --c-ok: 34 211 238;
+    --c-ok-soft: 14 47 58;
+    --c-warn: 251 191 36;
+    --c-bad: 255 138 128;
+    --c-bad-soft: 58 26 30;
+    --c-bad-solid: 198 40 40;
+  }
+}
+
+/* Parts of the browser we didn't draw: selection, caret, scrollbars, native controls. */
+html {
+  color-scheme: light dark;
+  accent-color: rgb(var(--c-accent));
+}
+::selection {
+  background: rgb(var(--c-accent) / 0.35);
+}
+input,
+textarea {
+  caret-color: rgb(var(--c-accent-text));
+}
+* {
+  scrollbar-color: rgb(var(--c-line)) transparent;
+}

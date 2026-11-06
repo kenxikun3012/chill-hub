@@ -32,6 +32,7 @@ export class LobbiesService {
 
   async list(q: LobbiesListQuery, actor: Actor) {
     const where: Prisma.LobbyWhereInput = {
+      ...(q.gameIds?.length ? { gameId: { in: q.gameIds } } : {}),
       ...(q.gameId ? { gameId: q.gameId } : {}),
       ...(q.modeId ? { modeId: q.modeId } : {}),
       ...(q.visibility ? { visibility: q.visibility } : {}),
@@ -72,7 +73,7 @@ export class LobbiesService {
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
       ...cursorArgs(q),
     });
-    return toPage(rows, q.limit, (row) => toLobbyView(row, actor.id));
+    return toPage(rows, q.limit, (row) => toLobbyView(row, actor));
   }
 
   async get(id: string, actor: Actor) {
@@ -84,7 +85,7 @@ export class LobbiesService {
       select: { userId: true, joinedAt: true, user: { select: { profile: { select: { displayName: true, avatarUrl: true } } } } },
     });
     return {
-      ...toLobbyView(row, actor.id),
+      ...toLobbyView(row, actor),
       members: members.map((m) => ({
         userId: m.userId,
         displayName: m.user.profile?.displayName ?? null,

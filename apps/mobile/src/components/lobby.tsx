@@ -1,36 +1,75 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "./text";
 import { nextOccurrence, rankRange, startLabel, type Lobby, type LobbyGame, type Named } from "../lib/lobby";
-import { Button, Chip, Field, Muted } from "./ui";
+import { useColors } from "../lib/theme";
+import Animated from "react-native-reanimated";
+import { LiveDot, Press, rise } from "./motion";
+import { Button, Chip, Field, Muted, SlotBar, Tag } from "./ui";
 
-export function LobbyCard({ lobby }: { lobby: Lobby }) {
+/** "VAL" for Valorant, "ML" for Mobile Legends: a short mark for the game tile. */
+const GAME_MARKS: Record<string, string> = { "PUBG Mobile": "PUBG", "Chess.com": "CC", "Dota 2": "D2" };
+
+function gameMark(name: string) {
+  if (GAME_MARKS[name]) return GAME_MARKS[name];
+  const words = name.trim().split(/\s+/);
+  return (words.length > 1 ? words.map((w) => w[0]).join("") : name.slice(0, 3)).toUpperCase().slice(0, 4);
+}
+
+export function LobbyCard({ lobby, index = 0 }: { lobby: Lobby; index?: number }) {
   const title = `${lobby.game.name} · ${lobby.mode.name}`;
+  const colors = useColors();
+  const live = ["Started", "Starts now"].includes(startLabel(lobby.startsAt));
+  const tags = [rankRange(lobby), ...lobby.neededRoles.map((r) => `Needs ${r.name}`)];
   return (
-    <Pressable
+    <Animated.View entering={rise(index)}>
+    <Press
       accessibilityRole="button"
       accessibilityLabel={`Open ${title}`}
       onPress={() => router.push(`/lobby/${lobby.id}`)}
-      className="gap-1 rounded-[10px] border border-line bg-white p-3"
+      className="gap-2.5 rounded-[10px] border border-line bg-card px-4 py-3.5 active:bg-raised"
     >
-      <View className="flex-row items-center gap-2">
-        <Text className="flex-1 font-semibold text-ink">
-          {title}
-          {lobby.visibility === "private" ? " 🔒" : ""}
-        </Text>
-        <Text className="font-semibold text-accent">
-          {lobby.memberCount}/{lobby.capacity}
-        </Text>
+      <View className="flex-row items-center gap-3">
+        <View accessibilityElementsHidden importantForAccessibility="no" className="h-11 w-11 items-center justify-center rounded-[10px] bg-accent-soft">
+          <Text className="font-display text-sm text-soft-text">{gameMark(lobby.game.name)}</Text>
+        </View>
+        <View className="flex-1 gap-0.5">
+          <View className="flex-row items-center gap-1.5">
+            <Text className="font-bold text-ink">{title}</Text>
+            {lobby.visibility === "private" ? <Ionicons name="lock-closed" size={14} color={colors.muted} accessibilityLabel="Private" /> : null}
+          </View>
+          <View className="flex-row items-center gap-1.5">
+            {live ? <LiveDot /> : null}
+            <Muted>
+              {startLabel(lobby.startsAt)} · {lobby.voiceChat ? "Voice" : "No voice"}
+            </Muted>
+          </View>
+        </View>
+        <View className="items-end gap-1.5">
+          <Text className="font-bold text-ink">
+            {lobby.memberCount}/{lobby.capacity}
+          </Text>
+          <SlotBar taken={lobby.memberCount} total={lobby.capacity} />
+        </View>
       </View>
-      <Muted>
-        {startLabel(lobby.startsAt)} · {rankRange(lobby)} · {lobby.voiceChat ? "Voice" : "No voice"}
-      </Muted>
-      {lobby.neededRoles.length ? <Muted>Needs {lobby.neededRoles.map((r) => r.name).join(", ")}</Muted> : null}
+      <View className="flex-row flex-wrap gap-1.5">
+        {tags.map((t) => (
+          <Tag key={t}>{t}</Tag>
+        ))}
+      </View>
       <Muted>
         {lobby.viewer.isHost ? "You're the host" : lobby.viewer.isMember ? `Host ${lobby.host.displayName ?? "unknown"} · you're in` : `Host ${lobby.host.displayName ?? "unknown"}`}
       </Muted>
-      {lobby.viewer.isMember && lobby.lobbyCode ? <Text className="font-mono font-bold text-ink">Code {lobby.lobbyCode}</Text> : null}
-    </Pressable>
+      {lobby.viewer.isMember && lobby.lobbyCode ? (
+        <View className="flex-row items-center gap-2 rounded-[10px] bg-raised px-3 py-2">
+          <Text className="text-sm text-muted">Code</Text>
+          <Text className="font-mono text-base font-bold tracking-widest text-ink">{lobby.lobbyCode}</Text>
+        </View>
+      ) : null}
+    </Press>
+    </Animated.View>
   );
 }
 
@@ -99,10 +138,15 @@ export function LobbyNeedsFields({
         </View>
         <Muted>Up to {max} for {game.name}.</Muted>
       </View>
-      <ChipGroup label="Lowest rank (optional)" options={toOptions(game.ranks)} value={needs.minRankId} onChange={(minRankId) => set({ minRankId })} />
-      <ChipGroup label="Highest rank (optional)" options={toOptions(game.ranks)} value={needs.maxRankId} onChange={(maxRankId) => set({ maxRankId })} />
+      {game.ranks.length ? (
+        <>
+          <ChipGroup label="Lowest rank" options={toOptions(game.ranks)} value={needs.minRankId} onChange={(minRankId) => set({ minRankId })} />
+          <ChipGroup label="Highest rank" options={toOptions(game.ranks)} value={needs.maxRankId} onChange={(maxRankId) => set({ maxRankId })} />
+        </>
+      ) : null}
+      {game.roles.length ? (
       <View className="gap-2">
-        <Text className="text-sm font-medium text-ink">Roles needed (optional)</Text>
+        <Text className="text-sm font-medium text-ink">Roles needed</Text>
         <View className="flex-row flex-wrap gap-2">
           {game.roles.map((role) => (
             <Chip
@@ -118,11 +162,12 @@ export function LobbyNeedsFields({
           ))}
         </View>
       </View>
+      ) : null}
       <View className="flex-row flex-wrap items-center gap-2">
         <Text className="text-sm font-medium text-ink">Voice chat</Text>
         <Chip label={needs.voiceChat ? "Voice on" : "No voice"} selected={needs.voiceChat} onPress={() => set({ voiceChat: !needs.voiceChat })} />
       </View>
-      <Field label="Note (optional)" value={needs.note} onChangeText={(note) => set({ note })} maxLength={300} multiline placeholder="e.g. Chill games, mic required" />
+      <Field label="Note" value={needs.note} onChangeText={(note) => set({ note })} maxLength={300} multiline placeholder="e.g. Chill games, mic required" />
     </>
   );
 }
@@ -163,6 +208,63 @@ export function StartTimeField({ onChange, keepLabel }: { onChange: (start: { ki
           hint={parsed ? startLabel(parsed.toISOString()) : "Lobbies can be scheduled up to 24 hours ahead."}
         />
       ) : null}
+    </View>
+  );
+}
+
+/** The "Games" dropdown button: shows how many games are picked. */
+export function GamesButton({ count, open, onPress }: { count: number; open: boolean; onPress: () => void }) {
+  const colors = useColors();
+  return (
+    <Press
+      accessibilityRole="button"
+      accessibilityLabel={count ? `Games, ${count} selected` : "Games, all"}
+      accessibilityState={{ expanded: open }}
+      onPress={onPress}
+      className={`min-h-[44px] flex-1 flex-row items-center gap-2 rounded-[10px] border bg-card px-3.5 ${count ? "border-accent" : "border-line"}`}
+    >
+      <Text className="flex-1 font-semibold text-ink">{count ? "Games" : "All games"}</Text>
+      {count ? (
+        <View className="h-[22px] min-w-[22px] items-center justify-center rounded-tag bg-accent px-1.5">
+          <Text className="text-xs font-bold text-on-accent">{count}</Text>
+        </View>
+      ) : null}
+      <Ionicons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+    </Press>
+  );
+}
+
+/** A multi-select list of games. Tapping a row picks or clears it right away. */
+export function GamesPanel({ games, selected, onChange, onDone }: { games: { id: string; name: string }[]; selected: string[]; onChange: (ids: string[]) => void; onDone: () => void }) {
+  const colors = useColors();
+  return (
+    <View accessibilityRole="menu" className="overflow-hidden rounded-[10px] border border-accent bg-card">
+      {games.map((g) => {
+        const on = selected.includes(g.id);
+        return (
+          <Pressable
+            key={g.id}
+            accessibilityRole="checkbox"
+            accessibilityLabel={g.name}
+            accessibilityState={{ checked: on }}
+            onPress={() => onChange(on ? selected.filter((id) => id !== g.id) : [...selected, g.id])}
+            className="min-h-[48px] flex-row items-center gap-3 border-b border-line px-3.5 active:bg-raised"
+          >
+            <View className={`h-[22px] w-[22px] items-center justify-center rounded-tag ${on ? "bg-accent" : "border-2 border-line"}`}>
+              {on ? <Ionicons name="checkmark" size={16} color={colors.onAccent} /> : null}
+            </View>
+            <Text className={`flex-1 ${on ? "font-bold text-ink" : "font-medium text-ink"}`}>{g.name}</Text>
+          </Pressable>
+        );
+      })}
+      <View className="flex-row gap-2 bg-raised p-3">
+        <View>
+          <Button title="Clear" variant="secondary" disabled={!selected.length} onPress={() => onChange([])} />
+        </View>
+        <View className="flex-1">
+          <Button title="Done" onPress={onDone} />
+        </View>
+      </View>
     </View>
   );
 }

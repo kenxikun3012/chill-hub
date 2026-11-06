@@ -3,6 +3,10 @@ import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, Platform, View } from "react-native";
+import { useFonts } from "expo-font";
+import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold } from "@expo-google-fonts/barlow";
+import { ChakraPetch_600SemiBold } from "@expo-google-fonts/chakra-petch";
+import { useColors } from "../src/lib/theme";
 import { listenForPush, registerForPush } from "../src/lib/push";
 import { RealtimeProvider } from "../src/lib/realtime";
 import { isStaffAccount, SessionProvider, useSession } from "../src/lib/session";
@@ -10,7 +14,9 @@ import { isStaffAccount, SessionProvider, useSession } from "../src/lib/session"
 /** Each account stage only reaches its own screens (ACC-06); moving between stages redirects automatically. */
 function Routes() {
   const { stage, account } = useSession();
+  const colors = useColors();
   const approved = stage === "approved";
+  const looking = approved || stage === "pending"; // a student waiting for approval can look around (ACC-06)
 
   useEffect(() => listenForPush(), []);
   useEffect(() => {
@@ -22,7 +28,7 @@ function Routes() {
   if (stage === "loading") {
     return (
       <View className="flex-1 items-center justify-center bg-page">
-        <ActivityIndicator color="#4f46e5" />
+        <ActivityIndicator color={colors.accentText} />
       </View>
     );
   }
@@ -42,21 +48,22 @@ function Routes() {
       <Stack.Protected guard={stage === "details" || stage === "rejected"}>
         <Stack.Screen name="sign-up-details" />
       </Stack.Protected>
-      <Stack.Protected guard={stage === "pending"}>
-        <Stack.Screen name="pending" />
-      </Stack.Protected>
       <Stack.Protected guard={stage === "setup"}>
         <Stack.Screen name="setup-profile" />
       </Stack.Protected>
-      <Stack.Protected guard={stage === "approved"}>
+      <Stack.Protected guard={looking}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="edit-profile" />
         <Stack.Screen name="players/[id]" />
+      </Stack.Protected>
+      <Stack.Protected guard={approved}>
+        <Stack.Screen name="edit-profile" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="notification-settings" />
       </Stack.Protected>
-      <Stack.Protected guard={stage === "approved" && !isStaffAccount(account)}>
+      <Stack.Protected guard={looking && !isStaffAccount(account)}>
         <Stack.Screen name="lobby/[id]" />
+      </Stack.Protected>
+      <Stack.Protected guard={approved && !isStaffAccount(account)}>
         <Stack.Screen name="edit-lobby" />
       </Stack.Protected>
       <Stack.Protected guard={isAdmin}>
@@ -67,9 +74,11 @@ function Routes() {
 }
 
 export default function RootLayout() {
+  const [fontsReady] = useFonts({ Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold, ChakraPetch_600SemiBold });
+  if (!fontsReady) return null;
   return (
     <SessionProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
       <RealtimeProvider>
         <Routes />
       </RealtimeProvider>

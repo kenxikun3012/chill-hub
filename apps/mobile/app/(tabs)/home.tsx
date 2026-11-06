@@ -1,8 +1,10 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, View } from "react-native";
+import { Text } from "../../src/components/text";
 import { LobbyCard } from "../../src/components/lobby";
 import { Banner, Button, Heading, Muted, NotificationBell, Screen } from "../../src/components/ui";
+import { WaitingCard } from "../../src/components/waiting";
 import { useLiveReload } from "../../src/lib/realtime";
 import { api, errorMessage } from "../../src/lib/api";
 import type { Lobby, Page } from "../../src/lib/lobby";
@@ -10,23 +12,33 @@ import { isStaffAccount, useSession } from "../../src/lib/session";
 
 /** Home: the player's active lobbies come first, since that's the most urgent thing. */
 export default function Home() {
-  const { account, logOut } = useSession();
+  const { account, stage, logOut } = useSession();
   const staff = isStaffAccount(account);
+  const waiting = stage === "pending";
   const [lobbies, setLobbies] = useState<Lobby[]>();
   const [error, setError] = useState<string>();
 
   const load = useCallback(() => {
-    if (staff) return;
+    if (staff || waiting) return;
     api<Page<Lobby>>("/lobbies?mine=true")
       .then((page) => {
         setLobbies(page.items);
         setError(undefined);
       })
       .catch((err) => setError(errorMessage(err)));
-  }, [staff]);
+  }, [staff, waiting]);
 
   useFocusEffect(load);
   useLiveReload(["lobbies:changed"], load, 500);
+
+  if (waiting) {
+    return (
+      <Screen title="Chill Hub" right={<Button title="Log out" variant="ghost" onPress={logOut} />}>
+        <WaitingCard />
+        <Button title="Look at the lobbies" onPress={() => router.push("/lobbies")} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -47,12 +59,12 @@ export default function Home() {
       ) : null}
       {error ? <Banner tone="bad">{error}</Banner> : null}
       {staff ? <Muted>This is a staff account, so lobbies aren't available.</Muted> : (
-      <Text accessibilityRole="header" className="text-sm font-semibold uppercase tracking-wide text-muted">
+      <Text accessibilityRole="header" className="font-display text-xs uppercase tracking-widest text-muted">
         My lobbies
       </Text>
       )}
-      {lobbies?.map((lobby) => (
-        <LobbyCard key={lobby.id} lobby={lobby} />
+      {lobbies?.map((lobby, i) => (
+        <LobbyCard key={lobby.id} lobby={lobby} index={i} />
       ))}
       {lobbies && !lobbies.length ? (
         <>

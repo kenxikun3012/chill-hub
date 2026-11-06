@@ -28,6 +28,12 @@ export const lobbyUpdateSchema = z
 
 export const lobbiesListQuerySchema = paginationQuerySchema.extend({
   gameId: idSchema.optional(),
+  /** Several games at once, as a comma-separated list. */
+  gameIds: z
+    .string()
+    .optional()
+    .transform((list) => list?.split(",").filter(Boolean))
+    .pipe(z.array(idSchema).max(20).optional()),
   modeId: idSchema.optional(),
   /** Default: "open" when browsing; all active statuses when mine=true. */
   status: lobbyStatusSchema.optional(),
