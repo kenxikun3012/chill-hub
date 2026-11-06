@@ -10,6 +10,8 @@ import {
 import { cursorArgs, toPage } from "../../common/http/pagination";
 import type { Actor } from "../../common/auth/actor";
 import { PrismaService, type Db } from "../../prisma/prisma.service";
+import { NotificationDeliveryService } from "./notification-delivery.service";
+import { channelsFor, NOTIFICATION_TYPE_GROUP } from "./notification-groups";
 
 export interface NewNotification {
   type: NotificationType;
@@ -18,73 +20,39 @@ export interface NewNotification {
   data?: Record<string, string>;
 }
 
-/** Which preference group a notification type belongs to (NOT-03). */
-export const NOTIFICATION_TYPE_GROUP: Record<NotificationType, NotificationGroup> = {
-  account_approved: "account",
-  account_rejected: "account",
-  join_request_received: "lobbies",
-  join_request_accepted: "lobbies",
-  join_request_declined: "lobbies",
-  lobby_member_joined: "lobbies",
-  lobby_member_left: "lobbies",
-  lobby_code_changed: "lobbies",
-  lobby_starting_soon: "lobbies",
-  lobby_closed: "lobbies",
-  rate_teammates: "lobbies",
-  chat_message: "lobby_chat",
-};
-
-/** Defaults when a user has no saved preference for a group. Account notifications can't be turned off. */
-export const PREFERENCE_DEFAULTS: Record<NotificationGroup, { push: boolean; email: boolean; inApp: boolean }> = {
-  account: { push: true, email: true, inApp: true },
-  lobbies: { push: true, email: false, inApp: true },
-  lobby_chat: { push: false, email: false, inApp: true },
-  knowledge: { push: true, email: false, inApp: true },
-  news: { push: false, email: false, inApp: true },
-};
-
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly delivery: NotificationDeliveryService,
+  ) {}
 
   /**
-   * Stores an in-app notification for each user who hasn't turned in-app off for this group.
-   * Push and email delivery are added in step 3d. Pass a transaction client to include it in a transaction.
+   * Stores a notification for each user with any channel on for this group; delivery follows shortly after.
+   * Pass a transaction client to include it in a transaction. Returns how many went to an inbox.
    */
   async notify(userIds: string[], n: NewNotification, db: Db = this.prisma): Promise<number> {
     const unique = [...new Set(userIds)];
     if (!unique.length) return 0;
     const group = NOTIFICATION_TYPE_GROUP[n.type];
-    let recipients = unique;
-    if (group !== "account") {
-      const optedOut = await db.notificationPreference.findMany({
-        where: { userId: { in: unique }, group, inApp: false },
-        select: { userId: true },
-      });
-      const skip = new Set(optedOut.map((p) => p.userId));
-      if (!PREFERENCE_DEFAULTS[group].inApp) {
-        const optedIn = await db.notificationPreference.findMany({
-          where: { userId: { in: unique }, group, inApp: true },
-          select: { userId: true },
-        });
-        const keep = new Set(optedIn.map((p) => p.userId));
-        recipients = unique.filter((u) => keep.has(u));
-      } else {
-        recipients = unique.filter((u) => !skip.has(u));
-      }
-    }
-    if (!recipients.length) return 0;
-    const result = await db.notification.createMany({
-      data: recipients.map((userId) => ({ userId, type: n.type, title: n.title, body: n.body, data: n.data ?? {} })),
+    const saved = await db.notificationPreference.findMany({ where: { userId: { in: unique }, group } });
+    const byUser = new Map(saved.map((p) => [p.userId, p]));
+    const rows = unique.flatMap((userId) => {
+      const channels = channelsFor(group, byUser.get(userId));
+      if (!channels.inApp && !channels.push && !channels.email) return [];
+      return [{ userId, type: n.type, title: n.title, body: n.body, data: n.data ?? {}, inbox: channels.inApp }];
     });
-    return result.count;
+    if (!rows.length) return 0;
+    await db.notification.createMany({ data: rows });
+    this.delivery.schedule();
+    return rows.filter((r) => r.inbox).length;
   }
 
   // ---------- inbox (NOT-04) ----------
 
   async list(actor: Actor, q: NotificationsListQuery) {
     const rows = await this.prisma.notification.findMany({
-      where: { userId: actor.id, ...(q.unreadOnly ? { readAt: null } : {}) },
+      where: { userId: actor.id, inbox: true, ...(q.unreadOnly ? { readAt: null } : {}) },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       ...cursorArgs(q),
     });
@@ -92,7 +60,7 @@ export class NotificationsService {
   }
 
   async unreadCount(actor: Actor) {
-    return { unread: await this.prisma.notification.count({ where: { userId: actor.id, readAt: null } }) };
+    return { unread: await this.prisma.notification.count({ where: { userId: actor.id, inbox: true, readAt: null } }) };
   }
 
   async setRead(actor: Actor, id: string, read: boolean) {
@@ -114,7 +82,7 @@ export class NotificationsService {
   }
 
   private async findOwn(actor: Actor, id: string) {
-    const n = await this.prisma.notification.findFirst({ where: { id, userId: actor.id } });
+    const n = await this.prisma.notification.findFirst({ where: { id, userId: actor.id, inbox: true } });
     if (!n) throw new NotFoundException("Notification not found");
     return n;
   }
@@ -126,7 +94,7 @@ export class NotificationsService {
     const byGroup = new Map(saved.map((p) => [p.group, p]));
     return NOTIFICATION_GROUPS.map((group) => {
       const p = byGroup.get(group);
-      const values = group === "account" ? PREFERENCE_DEFAULTS.account : p ?? PREFERENCE_DEFAULTS[group];
+      const values = channelsFor(group, p);
       return { group, push: values.push, email: values.email, inApp: values.inApp, locked: group === "account" };
     });
   }
@@ -138,7 +106,7 @@ export class NotificationsService {
       update: input,
       create: { userId: actor.id, group, ...input },
     });
-    return { group: saved.group, push: saved.push, email: saved.email, inApp: saved.inApp, locked: false };
+    return { group: saved.group, ...channelsFor(group, saved), locked: false };
   }
 
   // ---------- push tokens ----------

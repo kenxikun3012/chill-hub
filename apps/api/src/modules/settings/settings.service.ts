@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import {
   PUBLIC_SETTING_KEYS,
@@ -55,14 +56,25 @@ export class SettingsService {
 
   async publicSettings() {
     const all = await this.all();
-    return Object.fromEntries(PUBLIC_SETTING_KEYS.map((k) => [k, all[k]]));
+    return {
+      ...Object.fromEntries(PUBLIC_SETTING_KEYS.map((k) => [k, all[k]])),
+      signup_join_code_required: !!all.signup_join_code,
+    };
   }
 
-  /** ACC-02: only college email domains (or their subdomains) may register. */
+  /** ACC-02: if domains are set, only those email domains (or their subdomains) may register. None set: any email. */
   async isEmailDomainAllowed(email: string): Promise<boolean> {
     const domain = email.split("@")[1]?.toLowerCase() ?? "";
     const allowed = await this.get("allowed_email_domains");
-    return allowed.some((d) => domain === d || domain.endsWith(`.${d}`));
+    return !allowed.length || allowed.some((d) => domain === d || domain.endsWith(`.${d}`));
+  }
+
+  /** Sign-up needs the club's join code when one is set. Compared in constant time and without caring about case. */
+  async joinCodeMatches(given: string): Promise<boolean> {
+    const required = (await this.get("signup_join_code")).toLowerCase();
+    if (!required) return true;
+    const digest = (s: string) => createHash("sha256").update(s).digest();
+    return timingSafeEqual(digest(required), digest(given.trim().toLowerCase()));
   }
 
   clearCache() {

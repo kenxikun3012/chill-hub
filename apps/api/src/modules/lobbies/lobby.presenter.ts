@@ -1,4 +1,4 @@
-import { ACTIVE_LOBBY_STATUSES, type LobbyStatus } from "@chill-hub/shared";
+import { ACTIVE_LOBBY_STATUSES, type LobbyStatus, type UserStatus } from "@chill-hub/shared";
 import { Prisma } from "../../generated/prisma/client";
 
 const PROFILE_SELECT = { select: { displayName: true, avatarUrl: true } } as const;
@@ -13,7 +13,7 @@ export function lobbyInclude(viewerId: string) {
     neededRoles: { select: { gameRole: { select: { id: true, name: true } } } },
     host: { select: { id: true, profile: PROFILE_SELECT } },
     members: { where: { userId: viewerId, leftAt: null }, select: { userId: true } },
-    joinRequests: { where: { userId: viewerId }, select: { status: true } },
+    joinRequests: { where: { userId: viewerId }, select: { id: true, status: true } },
     _count: { select: { members: { where: { leftAt: null } } } },
   } satisfies Prisma.LobbyInclude;
 }
@@ -24,15 +24,17 @@ export const isActiveStatus = (s: LobbyStatus) => (ACTIVE_LOBBY_STATUSES as read
 /**
  * NFR-06 / LOB-03 / LOB-09: the one place that decides whether the viewer may see the in-game code.
  * Public lobby: any approved viewer. Private lobby: host and active members only. Closed or expired: nobody.
+ * A student still waiting for approval can look at lobbies but never sees a code, or approval would be pointless.
  */
-export function canSeeCode(row: Pick<LobbyRow, "status" | "visibility" | "hostId" | "members">, viewerId: string) {
-  if (!isActiveStatus(row.status)) return false;
-  const isMember = row.hostId === viewerId || row.members.length > 0;
+export function canSeeCode(row: Pick<LobbyRow, "status" | "visibility" | "hostId" | "members">, viewer: { id: string; status: UserStatus }) {
+  if (viewer.status === "pending" || !isActiveStatus(row.status)) return false;
+  const isMember = row.hostId === viewer.id || row.members.length > 0;
   return row.visibility === "public" || isMember;
 }
 
-export function toLobbyView(row: LobbyRow, viewerId: string) {
-  const codeVisible = canSeeCode(row, viewerId);
+export function toLobbyView(row: LobbyRow, viewer: { id: string; status: UserStatus }) {
+  const viewerId = viewer.id;
+  const codeVisible = canSeeCode(row, viewer);
   return {
     id: row.id,
     status: row.status,
@@ -54,6 +56,7 @@ export function toLobbyView(row: LobbyRow, viewerId: string) {
       isHost: row.hostId === viewerId,
       isMember: row.members.length > 0,
       joinRequestStatus: row.joinRequests[0]?.status ?? null,
+      joinRequestId: row.joinRequests[0]?.id ?? null,
     },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

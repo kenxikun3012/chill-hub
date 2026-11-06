@@ -278,12 +278,13 @@ The draw.io ERD was drawn before development. MVP-1 differs as follows (the ERD 
 
 `npm run db:seed` loads reference data, and is safe to run repeatedly:
 
-- **Games:** Valorant, Mobile Legends, PUBG Mobile, EA FC and League of Legends, each with ranks, roles and modes.
+- **Games:** Mobile Legends: Bang Bang, PUBG Mobile, Dota 2, Valorant, Genshin Impact, League of Legends, Honor of Kings and Chess.com, each with ranks, roles and modes. Games dropped from the list are hidden, not deleted.
 - **Settings** (defaults come from `SETTING_DEFAULTS` in `@chill-hub/shared`; only created if missing, so admin changes are kept; the old key `max_active_lobbies_per_host` is removed):
 
 | Key | Default | Spec |
 |---|---|---|
-| `allowed_email_domains` | `["yourcollege.edu"]` (replace with the real domain) | ACC-02 |
+| `allowed_email_domains` | `[]` (any email can sign up; admins can list domains to restrict it) | ACC-02 |
+| `signup_join_code` | `""` (no code needed; admins set the club's code, never shown publicly) | ACC-12 |
 | `lobby_expiry_hours` | 2 | LOB-09 |
 | `max_active_lobbies_per_player` | 3 | LOB-13 (counts lobbies a player is in, hosting included) |
 | `lobby_chat_retention_days` | 7 | LOB-11 |

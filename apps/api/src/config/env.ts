@@ -20,6 +20,10 @@ const envSchema = z
     /** Without these, emails are printed to the console (development only). */
     RESEND_API_KEY: z.string().min(1).optional(),
     MAIL_FROM: z.string().min(3).optional(),
+    /** Lobby expiry, reminders and chat clean-up. Off in tests, which run them directly. */
+    JOBS_ENABLED: z.stringbool().default(true),
+    /** Optional: only needed if "enhanced push security" is turned on in the Expo account. */
+    EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
     /** Comma-separated list of allowed browser origins. */
     CORS_ORIGINS: z.string().default("http://localhost:8081,http://localhost:19006"),
   })

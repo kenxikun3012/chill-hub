@@ -3,7 +3,7 @@
 // Sign in with the header x-dev-user-id: <id printed below> (needs DEV_AUTH=true).
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { SETTING_DEFAULTS, type RoleName } from "@chill-hub/shared";
+import type { RoleName } from "@chill-hub/shared";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 if (process.env["NODE_ENV"] === "production") {
@@ -14,13 +14,14 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env["DATABASE_URL"] }),
 });
 
-const DOMAIN = SETTING_DEFAULTS.allowed_email_domains[0]!;
+// Demo accounts only. Real sign-ups can use any email, so this is just a label for the demo users.
+const DOMAIN = "yourcollege.edu";
 const HOUR = 60 * 60 * 1000;
 
 type DemoUser = { id: string; handle: string; name: string; roles: RoleName[] };
 
 const USERS: DemoUser[] = [
-  { id: "00000000-0000-4000-8000-000000000001", handle: "demo_admin", name: "Demo Admin", roles: ["admin", "player"] },
+  { id: "00000000-0000-4000-8000-000000000001", handle: "demo_admin", name: "Demo Admin", roles: ["admin"] },
   { id: "00000000-0000-4000-8000-000000000002", handle: "demo_aye", name: "Demo Player Aye", roles: ["player"] },
   { id: "00000000-0000-4000-8000-000000000003", handle: "demo_bo", name: "Demo Player Bo", roles: ["player"] },
   { id: "00000000-0000-4000-8000-000000000004", handle: "demo_chit", name: "Demo Player Chit", roles: ["player"] },
@@ -63,6 +64,8 @@ async function seedUsers() {
         create: { userId: u.id, role },
       });
     }
+    // Earlier versions of this seed made the demo admin a player too.
+    await prisma.userRole.deleteMany({ where: { userId: u.id, role: { notIn: u.roles } } });
     await prisma.profile.upsert({
       where: { userId: u.id },
       update: {},

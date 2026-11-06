@@ -97,7 +97,7 @@ describe("Profiles, in-game accounts and the games catalogue", () => {
     it("is public, and hides inactive games from non-admins", async () => {
       const res = await ctx.http().get(`${API}/games`).expect(200);
       expect(res.body.map((g: { slug: string }) => g.slug)).toEqual(
-        expect.arrayContaining(["valorant", "mobile-legends", "pubg-mobile", "ea-fc", "league-of-legends"]),
+        expect.arrayContaining(["mobile-legends", "pubg-mobile", "dota-2", "valorant", "genshin-impact", "league-of-legends", "honor-of-kings", "chess-com"]),
       );
       expect(res.body[0].ranks.length).toBeGreaterThan(0);
     });

@@ -9,6 +9,8 @@ import { UsersService } from "./modules/accounts/users.service";
 import { GamesController } from "./modules/games/games.controller";
 import { GamesService } from "./modules/games/games.service";
 import { HealthController } from "./modules/health/health.controller";
+import { LobbyJobsService } from "./modules/lobbies/lobby-jobs.service";
+import { RealtimeGateway } from "./modules/realtime/realtime.gateway";
 import { LobbiesController } from "./modules/lobbies/lobbies.controller";
 import { LobbiesService } from "./modules/lobbies/lobbies.service";
 import { LobbyChatService } from "./modules/lobbies/lobby-chat.service";
@@ -37,6 +39,8 @@ import { SettingsController } from "./modules/settings/settings.controller";
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
     AuthService,
+    RealtimeGateway,
+    LobbyJobsService,
     UsersService,
     ApprovalsService,
     GamesService,

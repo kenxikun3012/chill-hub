@@ -28,6 +28,12 @@ export const lobbyUpdateSchema = z
 
 export const lobbiesListQuerySchema = paginationQuerySchema.extend({
   gameId: idSchema.optional(),
+  /** Several games at once, as a comma-separated list. */
+  gameIds: z
+    .string()
+    .optional()
+    .transform((list) => list?.split(",").filter(Boolean))
+    .pipe(z.array(idSchema).max(20).optional()),
   modeId: idSchema.optional(),
   /** Default: "open" when browsing; all active statuses when mine=true. */
   status: lobbyStatusSchema.optional(),
@@ -37,6 +43,7 @@ export const lobbiesListQuerySchema = paginationQuerySchema.extend({
   /** Lobbies whose rank range includes this rank. */
   rankId: idSchema.optional(),
   hostId: idSchema.optional(),
+  voiceChat: z.stringbool().optional(),
   startsAfter: dateTimeSchema.optional(),
   startsBefore: dateTimeSchema.optional(),
   /** Only lobbies the current user is an active member of (Home's "My upcoming lobbies"). */

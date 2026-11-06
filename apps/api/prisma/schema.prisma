@@ -385,6 +385,8 @@ model Lobby {
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
   closedAt   DateTime?       @map("closed_at")
+  // Set when the start reminder goes out (LOB-12); cleared if the start time moves.
+  reminderSentAt DateTime?   @map("reminder_sent_at")
 
   host         User               @relation(fields: [hostId], references: [id], onDelete: Cascade)
   game         Game               @relation(fields: [gameId], references: [id], onDelete: Restrict)
@@ -497,12 +499,17 @@ model Notification {
   body      String
   data      Json? // e.g. { "lobbyId": "..." } for deep links
   readAt    DateTime?        @map("read_at")
+  // False when the user only wants this by push or email.
+  inbox     Boolean          @default(true)
+  // Empty until push, email and the live signal have been attempted.
+  deliveredAt DateTime?      @map("delivered_at")
   createdAt DateTime         @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, readAt])
+  @@index([deliveredAt])
   @@map("notifications")
 }
 

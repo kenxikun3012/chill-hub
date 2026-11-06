@@ -9,6 +9,12 @@
       "url": "http://localhost:3000"
     },
     {
+      "name": "phone",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "-w", "@chill-hub/mobile", "--", "--lan", "--go"],
+      "port": 8081
+    },
+    {
       "name": "web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "web", "-w", "@chill-hub/mobile"],
