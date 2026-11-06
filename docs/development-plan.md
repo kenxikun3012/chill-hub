@@ -11,9 +11,10 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 | 1 | **Database**: MVP-1 schema, first migration, seed data, database docs | ✅ Done (2026-10-24): applied and seeded on the Neon `dev` branch |
 | 2 | **Basic CRUD APIs** for the MVP-1 tables (NestJS + OpenAPI) | ✅ Done (2026-10-28): 64 endpoints with core rules, 51 e2e tests. See the [API guide](api/README.md) |
 | 3a | **Authentication**: sign-up (3 steps), email code, pending/rejected screens, login, password reset; admin approval queue | ✅ Built (2026-10-30): API, app screens and admin queue. See the [plan below](#step-3a-plan-authentication) |
-| 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ⬜ |
-| 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ⬜ |
-| 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ⬜ |
+| 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ✅ Built (2026-10-30): initials instead of photos for now |
+| 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ✅ Built (2026-10-30): chat and lobbies refresh every few seconds until step 3d |
+| 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ✅ Built (2026-10-31). Android push is built but not yet tried on a device: see the [setup guide](mobile/push-setup.md) |
+| 3d+ | **Sign-up rework**: no email domain, student ID first, club join code, students waiting for approval can look around | ✅ Built (2026-11-06): see [the decisions below](#sign-up-rework) |
 | 3e | **Post-match feedback**: rating screen, reputation on profiles | ⬜ |
 
 Each feature in step 3 is one agile iteration: build the UI (app + web) and connect it to the backend, test it, then update the docs and changelog.
@@ -73,9 +74,43 @@ Differences from the wireframes: no ID photo yet, and the student ID number's un
 - Before production only: a Resend account and a domain to send from, plus the real college email domain.
 - A Neon `dev` branch, so test runs stop wiping development data.
 
+## Step 3b decisions
+
+Decided 2026-10-30. A display name is chosen on a required screen at the first login after approval. Approved players get bottom tabs (Home and Profile for now). `/` is the entry point: the welcome page for guests, a redirect to the right screen for everyone else. Avatars are initials until file storage arrives. `/players/:id` shows other players' public profiles and reputation, ready for step 3c to link to; "Report user" waits for moderation.
+
+## Step 3c decisions
+
+Decided 2026-10-30. Lobbies can be scheduled up to 24 hours ahead (spec v0.7), so the host picks Now or types a clock time, which means its next occurrence. An open chat refreshes every 5 seconds and an open lobby every 10 until Socket.IO arrives in step 3d; the list refreshes on opening and pull-down. Search is left out for now. Closing a lobby makes chat read-only and sends the rating notification; the rating screen is step 3e. Differences from the wireframes: the lobby page shows no rank or role per member and no host reputation on cards, because the API doesn't return them yet.
+
+## Staff and lobbies
+
+Decided 2026-10-30 (spec v0.8). Moderators and admins are staff accounts and can't use lobbies, even with the player role. The Lobbies and Create tabs and My lobbies are hidden for them, and the API refuses them. Admins can still delete a lobby through the API until a moderation screen exists. Organizers keep lobby access.
+
+## Step 3d decisions
+
+Decided 2026-10-31 (spec v0.9). Jobs run on a timer inside the API, with no Redis, sleeping until the next one is due. Socket events only signal what changed. Chat creates no inbox items, and chat push is opt-in. Notification settings are linked from the inbox; a full Settings screen comes later. Android push needs a development build, and iOS push waits for an Apple Developer account.
+
+**Next, to discuss:** the college has no email domain, so the plan is to remove the domain restriction and ask for the student ID first at sign-up.
+
+## Sign-up rework
+
+Decided 2026-11-06 (spec v1.0, [ADR 0005](decisions/0005-signup-without-college-email.md)). The college has no email domain, so the email check is replaced by other safeguards.
+
+| Topic | Choice |
+|---|---|
+| Email | Any address works, and the code proves it's real. Admins can still list allowed domains (empty by default) |
+| Sign-up order | 1. Student ID number (like `22/29484`), club join code if set, name, email, password. 2. Email code. 3. Main game |
+| Join code | One shared code in settings, hidden from the public. Admins change it on the `/admin` page |
+| Identity check | An admin compares the ID number by hand, as before. Checking against the club's list of IDs and names comes later (ACC-14), once the data is collected |
+| Waiting for approval | A student whose details are in can look at lobbies, games and profiles, but can't create, join or change anything, and never sees lobby codes. A rejected student sees only their status page |
+| Unfinished sign-ups | The ID number is claimed at step 1. If the email is never verified, the ID is released once the 10-minute code has expired |
+
+The wireframes still show the earlier sign-up order.
+
 ## Later increments (from the spec)
 
-- ID photo upload with 30-day deletion (ACC-08)
+- ID photo upload with 30-day deletion (ACC-08), and profile photos (PRO-01), once file storage is set up
+- Student ID list import and check (ACC-14), once the club has collected the data
 - Knowledge sharing: guides, Q&A, news
 - Reporting and moderation queue, audit log
 - Admin panel: dashboard, users, games catalogue, settings

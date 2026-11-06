@@ -4,7 +4,15 @@ import { inGameAccountCreateSchema } from "./profiles.js";
 import { approvalStatusSchema, roleNameSchema, userStatusSchema } from "./enums.js";
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
-export const studentIdNumberSchema = z.string().trim().min(3).max(32);
+/**
+ * Student ID numbers look like 22/29484: the batch's two-digit start year, a slash, then the code.
+ * Other separators (22-29484, 22 29484) are accepted and turned into a slash.
+ */
+export const studentIdNumberSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.replace(/^(\d{2})\s*[-\\._ ]\s*(\d+)$/, "$1/$2"))
+  .pipe(z.string().regex(/^\d{2}\/\d{3,8}$/, "Enter it like 22/29484"));
 /** Same limits as Better Auth in the API. */
 export const passwordSchema = z.string().min(8, "At least 8 characters").max(128, "At most 128 characters");
 
@@ -36,9 +44,12 @@ export const usersListQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().min(1).max(100).optional(),
 });
 
-/** Sign-up step 3 (ACC-01); also used to fix details after a rejection. */
+/**
+ * Sign-up step 3 (ACC-01): the main game. The student ID number is given at step 1, so it's only sent here
+ * to fix it after a rejection.
+ */
 export const signUpDetailsSchema = z.strictObject({
-  studentIdNumber: studentIdNumberSchema,
+  studentIdNumber: studentIdNumberSchema.optional(),
   inGameAccount: inGameAccountCreateSchema,
 });
 

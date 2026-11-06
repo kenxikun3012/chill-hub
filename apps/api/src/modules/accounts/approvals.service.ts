@@ -34,12 +34,19 @@ export class ApprovalsService {
   ) {}
 
   /**
-   * Sign-up step 3, and fixing details after a rejection (ACC-06): saves the student ID number and
-   * an in-game ID, then joins the approval queue (ACC-03). Safe to retry if a step fails.
+   * Sign-up step 3, and fixing details after a rejection (ACC-06): saves an in-game ID, and a corrected
+   * student ID number if one is sent, then joins the approval queue (ACC-03). Safe to retry if a step fails.
    */
   async submitDetails(actor: Actor, input: SignUpDetailsInput) {
     await this.assertCanSubmit(actor);
-    await this.prisma.user.update({ where: { id: actor.id }, data: { studentIdNumber: input.studentIdNumber } });
+    if (input.studentIdNumber) {
+      const taken = await this.prisma.user.findFirst({
+        where: { studentIdNumber: input.studentIdNumber, id: { not: actor.id }, deletedAt: null },
+        select: { id: true },
+      });
+      if (taken) throw new ConflictException("This student ID is already registered. If it isn't yours, ask an admin for help.");
+      await this.prisma.user.update({ where: { id: actor.id }, data: { studentIdNumber: input.studentIdNumber } });
+    }
     const { gameId, ...account } = input.inGameAccount;
     const existing = await this.prisma.inGameAccount.findUnique({ where: { userId_gameId: { userId: actor.id, gameId } } });
     if (existing) await this.profiles.updateAccount(actor, existing.id, account);

@@ -13,8 +13,8 @@ import type { Request } from "express";
 import { ENV, type Env } from "../../config/env";
 import { AuthService } from "../../modules/auth/auth.service";
 import { PrismaService } from "../../prisma/prisma.service";
-import type { Actor } from "./actor";
-import { ALLOW_PENDING, IS_PUBLIC, REQUIRED_ROLES } from "./decorators";
+import { isStaff, type Actor } from "./actor";
+import { ALLOW_PENDING, IS_PUBLIC, NO_STAFF, REQUIRED_ROLES } from "./decorators";
 
 export const DEV_USER_HEADER = "x-dev-user-id";
 
@@ -33,6 +33,8 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    // Sockets are identified once, when they connect (see RealtimeGateway).
+    if (ctx.getType() !== "http") return true;
     const targets = [ctx.getHandler(), ctx.getClass()];
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets) ?? false;
     const allowPending = this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING, targets) ?? false;
@@ -53,6 +55,9 @@ export class AuthGuard implements CanActivate {
     if (roles.length && !roles.some((r) => actor.roles.includes(r))) {
       throw new ForbiddenException("You don't have permission to do this");
     }
+    if (this.reflector.getAllAndOverride<boolean>(NO_STAFF, targets) && isStaff(actor)) {
+      throw new ForbiddenException("Staff accounts can't use lobbies");
+    }
     req.actor = actor;
     return true;
   }
@@ -69,6 +74,13 @@ export class AuthGuard implements CanActivate {
       case "banned":
         throw new ForbiddenException("This account is banned");
       case "pending":
+        if (allowPending) return;
+        // ACC-06: once their details are in, a student waiting for approval can look around (GET) but not act.
+        if (actor.awaitingApproval) {
+          if (method === "GET") return;
+          throw new ForbiddenException("You can look around, but you can't do this until an admin approves your account");
+        }
+        throw new ForbiddenException("Your account hasn't been approved yet");
       case "rejected":
         if (!allowPending) throw new ForbiddenException("Your account hasn't been approved yet");
         return;
@@ -89,7 +101,7 @@ export class AuthGuard implements CanActivate {
   private async loadActor(userId: string): Promise<Actor | null> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
-      include: { roles: true },
+      include: { roles: true, approvalRequests: { where: { status: "pending" }, select: { id: true }, take: 1 } },
     });
     if (!user) return null;
     return {
@@ -98,6 +110,7 @@ export class AuthGuard implements CanActivate {
       email: user.email,
       status: user.status,
       suspendedUntil: user.suspendedUntil,
+      awaitingApproval: user.status === "pending" && user.approvalRequests.length > 0,
       roles: user.roles.map((r) => r.role),
     };
   }

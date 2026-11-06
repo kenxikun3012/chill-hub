@@ -7,18 +7,37 @@ import { configureApp } from "../src/app.setup";
 import { DEV_USER_HEADER } from "../src/common/auth/auth.guard";
 import { ENV, loadEnv } from "../src/config/env";
 import { Mailer, type Mail } from "../src/modules/auth/mailer";
+import { PushSender, type PushMessage } from "../src/modules/notifications/push-sender";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { SettingsService } from "../src/modules/settings/settings.service";
 import { testDatabaseEnv } from "./test-env";
 
 export const API = "/api/v1";
-export const DOMAIN = SETTING_DEFAULTS.allowed_email_domains[0]!;
+/** Email domain for test accounts. Sign-up accepts any email unless an admin sets allowed domains. */
+export const DOMAIN = "chillhub.test";
+
+let studentIdCounter = 0;
+/** A valid, unique student ID number in the college's form (22/29484). */
+export const newStudentId = () =>
+  `22/${String(Date.now() % 100_000).padStart(5, "0")}${String(++studentIdCounter % 100).padStart(2, "0")}`;
 
 export interface TestContext {
   app: INestApplication;
   prisma: PrismaService;
   http: () => ReturnType<typeof request>;
   mail: MemoryMailer;
+  push: MemoryPush;
+}
+
+/** Keeps push messages; tokens listed in `invalid` are reported as dead. */
+export class MemoryPush extends PushSender {
+  sent: PushMessage[] = [];
+  invalid: string[] = [];
+
+  async send(messages: PushMessage[]) {
+    this.sent.push(...messages);
+    return this.invalid;
+  }
 }
 
 /** Keeps emails so tests can read the codes. */
@@ -39,18 +58,21 @@ export class MemoryMailer extends Mailer {
 /** Boots the real AppModule against the test database, with dev auth on. */
 export async function createTestApp(overrides: Record<string, string> = {}): Promise<TestContext> {
   const { url } = testDatabaseEnv();
-  const env = loadEnv({ ...process.env, NODE_ENV: "test", DATABASE_URL: url, DEV_AUTH: "true", AUTH_RATE_LIMIT: "false", ...overrides });
+  const env = loadEnv({ ...process.env, NODE_ENV: "test", DATABASE_URL: url, DEV_AUTH: "true", AUTH_RATE_LIMIT: "false", JOBS_ENABLED: "false", ...overrides });
   const mail = new MemoryMailer();
+  const push = new MemoryPush();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(ENV)
     .useValue(env)
     .overrideProvider(Mailer)
     .useValue(mail)
+    .overrideProvider(PushSender)
+    .useValue(push)
     .compile();
   const app = moduleRef.createNestApplication({ logger: ["error"] });
   configureApp(app, env);
   await app.init();
-  return { app, prisma: app.get(PrismaService), http: () => request(app.getHttpServer()), mail };
+  return { app, prisma: app.get(PrismaService), http: () => request(app.getHttpServer()), mail, push };
 }
 
 /**

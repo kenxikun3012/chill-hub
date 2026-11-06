@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException } from "@nestjs/common";
 import { ACTIVE_LOBBY_STATUSES } from "@chill-hub/shared";
 import type { Db } from "../../prisma/prisma.service";
 
-const MAX_START_AHEAD_DAYS = 14;
+const MAX_START_AHEAD_HOURS = 24;
 const START_GRACE_MINUTES = 5;
 
 /** Mode, ranks and roles must belong to the lobby's game, and the rank range must be in order. */
@@ -34,8 +34,8 @@ export function checkStartsAt(startsAt: Date) {
   if (startsAt.getTime() < now - START_GRACE_MINUTES * 60_000) {
     throw new BadRequestException("The start time can't be in the past");
   }
-  if (startsAt.getTime() > now + MAX_START_AHEAD_DAYS * 86_400_000) {
-    throw new BadRequestException(`Lobbies can be scheduled at most ${MAX_START_AHEAD_DAYS} days ahead`);
+  if (startsAt.getTime() > now + MAX_START_AHEAD_HOURS * 3_600_000) {
+    throw new BadRequestException(`Lobbies can be scheduled at most ${MAX_START_AHEAD_HOURS} hours ahead`);
   }
 }
 

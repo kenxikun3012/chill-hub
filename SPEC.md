@@ -4,7 +4,7 @@
 |---|---|
 | **Product** | Chill Hub (working name): college gaming hub |
 | **Platforms** | Website, Android app, iOS app, Admin web panel |
-| **Version** | 0.6 (draft): hosting changed to a low-cost VPS, with two database options (on the VPS or on Neon Free) |
+| **Version** | 1.0 (draft): sign-up needs no college email: student ID number first, club join code, and students waiting for approval can look around |
 | **Date** | 2026-10-15 |
 | **Owner** | College esports club |
 | **Status** | Draft for review |
@@ -51,11 +51,13 @@ Accounts are restricted to approved college students. Admins review every sign-u
 |---|---|---|
 | **Visitor** | Not logged in, or account pending | View landing page; sign up; check approval status |
 | **Player** | Approved student | Create/join lobbies, chat, write guides, ask/answer questions, rate teammates, report, register for tournaments |
-| **Moderator** | Trusted students/staff | Everything a Player can do, plus: review reports, hide/remove content, warn/suspend users |
+| **Moderator** | Trusted students/staff | Everything a Player can do except lobbies, plus: review reports, hide/remove content, warn/suspend users |
 | **Tournament Organizer** | Authorized esports club moderators | Create and run tournaments, confirm results, manage brackets |
-| **Admin** | App administrators | Everything above, plus: approve/reject accounts, assign roles, manage the games list, post news, change system settings, ban users |
+| **Admin** | App administrators | Everything above except lobbies, plus: approve/reject accounts, assign roles, manage the games list, post news, change system settings, ban users |
 
 A user can hold more than one role (e.g. Moderator + Tournament Organizer).
+
+Moderators and Admins can't find, create, join or chat in lobbies, even if they also hold the Player role, and they never see lobby codes. Being given either role takes the person out of their active lobbies and closes any they host. Admins can still delete a lobby for moderation.
 
 ### 2.2 Operating environment
 - **Website:** latest two versions of Chrome, Edge, Firefox and Safari; responsive from 360 px phone width to desktop.
@@ -78,17 +80,20 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 
 | ID | Requirement | Priority |
 |---|---|---|
-| ACC-01 | A visitor can sign up with full name, college email, password, student ID number, a photo of their student ID card, and at least one in-game ID. | MVP |
-| ACC-02 | The system verifies the college email by sending a code or link. Only emails on the allowed college domain(s) are accepted. | MVP |
+| ACC-01 | A visitor can sign up with their student ID number, the club's join code (when one is set), full name, email, password, and at least one in-game ID, chosen after the email code. A photo of their student ID card is added in a later increment (see ACC-08). | MVP |
+| ACC-02 | The system verifies the email address by sending a code. The college has no email domain, so any email address can be used. Admins can still limit sign-up to chosen email domains in settings. | MVP |
 | ACC-03 | After email verification, the account enters **Pending** state and appears in the admin approval queue. | MVP |
 | ACC-04 | An admin can view a pending applicant's details and ID photo, then **Approve** or **Reject** (with a reason). | MVP |
 | ACC-05 | The applicant is notified of the decision by email and, if they have the app, by push notification. | MVP |
-| ACC-06 | Pending and rejected users cannot access any feature beyond their status page. A rejected user may re-apply once the issue is fixed. | MVP |
+| ACC-06 | A pending user whose details are in can look around (browse lobbies, games and players' profiles) but cannot create, join or change anything until an admin approves them, and never sees lobby codes. A rejected user can only see their status page, and may re-apply once the issue is fixed. | MVP |
 | ACC-07 | Users can log in, log out, and reset a forgotten password by email. | MVP |
 | ACC-08 | Student ID photos are visible to admins only and are **permanently deleted within 30 days** of the approval decision. Only the approval result, the reviewing admin and the date are kept. | MVP |
 | ACC-09 | Admins can suspend or ban an account. Banned users are logged out of all devices. | MVP |
 | ACC-10 | Users can delete their own account. Their personal data is removed. Their public posts are kept but shown as "Deleted user". | MVP |
 | ACC-11 | Admins can bulk-deactivate accounts (e.g. graduated students) by year or list. | P3 |
+| ACC-12 | When admins have set a club join code, sign-up needs it (case does not matter). Admins can change it or clear it in the admin panel. | MVP |
+| ACC-13 | Student ID numbers are written like 22/29484 (the batch's two-digit start year, a slash, then the code) and each can belong to one account. A sign-up that isn't verified within 10 minutes releases its ID. | MVP |
+| ACC-14 | Admins can import the club's list of valid student ID numbers and names. A sign-up with an ID that isn't on the list is refused with a clear message, and the approval queue shows the listed name beside the name the student typed. | P2 |
 
 ### 3.2 Profiles
 
@@ -103,7 +108,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 
 | ID | Requirement | Priority |
 |---|---|---|
-| GAM-01 | Admins manage a list of supported games (e.g. Valorant, Mobile Legends, PUBG Mobile, EA FC, League of Legends). | MVP |
+| GAM-01 | Admins manage a list of supported games (at launch: Mobile Legends: Bang Bang, PUBG Mobile, Dota 2, Valorant, Genshin Impact, League of Legends, Honor of Kings, Chess.com). | MVP |
 | GAM-02 | For each game, admins define: name, icon, platform(s), team/lobby size, rank tiers, player roles, and game modes. | MVP |
 | GAM-03 | Lobby filters, profile ranks and roles use the per-game values from GAM-02. | MVP |
 
@@ -111,7 +116,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 
 | ID | Requirement | Priority |
 |---|---|---|
-| LOB-01 | A player can create a lobby with: game, mode, **in-game lobby code (required)**, number of open slots, rank range, needed roles, voice chat yes/no, start time ("now" or a scheduled time), and an optional note. | MVP |
+| LOB-01 | A player can create a lobby with: game, mode, **in-game lobby code (required)**, number of open slots, rank range, needed roles, voice chat yes/no, start time ("now" or a scheduled time up to 24 hours ahead), and an optional note. | MVP |
 | LOB-02 | A lobby cannot be published without a lobby code. | MVP |
 | LOB-03 | When creating a lobby, the host chooses **Public** (code visible to all approved users) or **Private** (code visible only to accepted members). | MVP |
 | LOB-04 | **Public lobby:** any approved player can take an open slot right away and sees the code. | MVP |
@@ -183,7 +188,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 | ID | Requirement | Priority |
 |---|---|---|
 | NOT-01 | The system sends notifications through three channels: **push** (mobile), **email** and an **in-app inbox** (notification bell on web and mobile). | MVP |
-| NOT-02 | Events that trigger notifications include: account approved/rejected; lobby join request; request accepted/declined; lobby code changed; lobby starting soon; new lobby chat message; answer to your question; report resolved; tournament events (P2). | MVP |
+| NOT-02 | Events that trigger notifications include: account approved/rejected; lobby join request; request accepted/declined; lobby code changed; lobby starting soon; new lobby chat message (push only, and off unless the player turns it on; chat itself stays in the lobby, not the inbox); answer to your question; report resolved; tournament events (P2). | MVP |
 | NOT-03 | Users can turn each notification type on or off per channel. Account and security emails cannot be turned off. | MVP |
 | NOT-04 | The in-app inbox shows unread count and lets users mark all as read. | MVP |
 
@@ -196,7 +201,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 | ADM-03 | **User management:** search users, view profile and history, change roles, suspend/ban/unban. | MVP |
 | ADM-04 | **Moderation queue** and **audit log** (see 3.7). | MVP |
 | ADM-05 | **Games catalogue** management (see 3.3). | MVP |
-| ADM-06 | **Settings:** allowed email domains, lobby expiry time, max active lobbies, no-show threshold, leaderboard points. | MVP |
+| ADM-06 | **Settings:** club join code, allowed email domains (optional), lobby expiry time, max active lobbies, no-show threshold, leaderboard points. | MVP |
 | ADM-07 | **Dashboard stats:** registered users, pending approvals, active lobbies, posts, open reports. | MVP |
 | ADM-08 | **Tournament management** screens for organizers (see 3.8). | P2 |
 
@@ -247,7 +252,7 @@ Priority key: **MVP** = first release · **P2** = Phase 2 · **P3** = later/opti
 | Authentication | **Better Auth** inside the NestJS API | Email + password, college-domain email verification, password reset, sessions. Users, roles and Pending/Approved/Rejected status stored in Postgres. |
 | Real-time | **Socket.IO** (NestJS WebSocket gateway) | Lobby chat, live lobby list and slots, code-change alerts, live brackets. Runs on the always-on VPS, so connections never sleep. A Redis adapter is added once more than one API instance runs. |
 | File storage | **Cloudflare R2** (S3-compatible) | Private bucket for student ID photos with short-lived signed URLs (NFR-07); public bucket for avatars and guide images |
-| Scheduled jobs | **BullMQ** with Redis on the VPS | Lobby expiry, start reminders, chat clean-up after 7 days, ID photo deletion after 30 days |
+| Scheduled jobs | A timer inside the NestJS API, with no Redis (BullMQ can replace it if a second API server is added). It sleeps until the next job is due, so it doesn't keep a Neon database awake | Lobby expiry, start reminders, chat clean-up after 7 days, ID photo deletion after 30 days |
 | Push | Expo Push Notifications (FCM/APNs) | |
 | Email | Transactional email service (e.g. Resend) | |
 | Hosting | **Low-cost VPS** (about US$2/month, at least 1 GB RAM, e.g. IONOS VPS XS) running Docker Compose: NestJS API, Redis, Caddy (automatic HTTPS) and, in Option 1, PostgreSQL. Expo web build on **Cloudflare Pages** (free). App Store / Google Play via EAS Submit. | Always on, so WebSockets and scheduled jobs never sleep. Fixed monthly price. The team is responsible for OS security updates and backups (see 5.1). Renewal prices can be higher than the first term, so check before buying. |
@@ -305,8 +310,8 @@ Development is ongoing with no fixed deadline, so the work is split into phases.
 
 ## 7. Acceptance criteria (MVP highlights)
 
-1. A new student can sign up, verify their email, and be approved by an admin. They cannot use the app before approval.
-2. A non-college email is rejected at sign-up.
+1. A new student can sign up, verify their email, and be approved by an admin. Before approval they can look around but cannot create or join anything, and see no lobby codes.
+2. A sign-up without a valid student ID number, or with the wrong join code, is rejected.
 3. A lobby cannot be created without an in-game lobby code.
 4. In a private lobby, the code is hidden from a non-member (including in API responses) and becomes visible right after the host accepts them.
 5. In a public lobby, any approved player sees the code and can take a slot until the lobby is full.
@@ -321,7 +326,7 @@ Development is ongoing with no fixed deadline, so the work is split into phases.
 
 ## 8. Open questions
 
-1. What is the college's email domain(s)? Are staff/alumni allowed?
+1. ~~What is the college's email domain(s)?~~ The college has no email domain (decided 2026-11-06). Are staff/alumni allowed to sign up?
 2. Who are the first admins, and who approves new moderators/organizers?
 3. Which games should launch in the catalogue on day one?
 4. Does the college have rules about storing student ID numbers and photos that need sign-off (e.g. from the IT or data-protection office)?
@@ -342,7 +347,7 @@ Development is ongoing with no fixed deadline, so the work is split into phases.
 
 UI decisions made while wireframing:
 
-- Sign-up has 3 steps (account → student ID → games), followed by the email code.
+- Sign-up has 3 steps: student ID number, join code, name, email and password; then the email code; then the main game. The wireframes still show the earlier order.
 - Mobile navigation is a bottom tab bar: Home · Lobbies · Create · Knowledge · Profile.
 - Home is a dashboard: my upcoming lobbies (code with a copy button), play-now lobbies, news, trending guides.
 - Lobby cards show game, mode, start time and slots; rank and roles needed; host and reputation.

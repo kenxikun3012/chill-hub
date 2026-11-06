@@ -7,6 +7,8 @@ export interface Actor {
   email: string;
   status: UserStatus;
   suspendedUntil: Date | null;
+  /** Pending, with details submitted: an admin hasn't decided yet. Such users can look around but not act. */
+  awaitingApproval: boolean;
   roles: RoleName[];
 }
 

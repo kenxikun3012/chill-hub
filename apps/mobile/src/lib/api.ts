@@ -17,6 +17,8 @@ function apiUrl() {
 }
 
 const API_URL = apiUrl();
+/** The server itself, for the live connection. */
+export const SERVER_URL = API_URL.replace(/\/api\/v1\/?$/, "");
 
 export class ApiError extends Error {
   constructor(

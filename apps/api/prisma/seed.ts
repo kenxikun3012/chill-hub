@@ -23,19 +23,8 @@ type GameSeed = {
 
 const GAMES: GameSeed[] = [
   {
-    slug: "valorant",
-    name: "Valorant",
-    platforms: ["pc"],
-    teamSize: 5,
-    maxLobbySize: 10,
-    inGameIdLabel: "Riot ID (name#tag)",
-    ranks: ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Ascendant", "Immortal", "Radiant"],
-    roles: ["Duelist", "Controller", "Initiator", "Sentinel", "IGL"],
-    modes: ["Competitive", "Unrated", "Swiftplay", "Spike Rush", "Custom 5v5"],
-  },
-  {
     slug: "mobile-legends",
-    name: "Mobile Legends",
+    name: "Mobile Legends: Bang Bang",
     platforms: ["mobile"],
     teamSize: 5,
     maxLobbySize: 10,
@@ -56,15 +45,37 @@ const GAMES: GameSeed[] = [
     modes: ["Classic", "Ranked", "Arena", "Team Deathmatch"],
   },
   {
-    slug: "ea-fc",
-    name: "EA FC",
-    platforms: ["console", "pc"],
-    teamSize: 1,
-    maxLobbySize: 11,
-    inGameIdLabel: "EA ID",
-    ranks: ["Division 10", "Division 9", "Division 8", "Division 7", "Division 6", "Division 5", "Division 4", "Division 3", "Division 2", "Division 1", "Elite"],
-    roles: ["Goalkeeper", "Defender", "Midfielder", "Striker"],
-    modes: ["Rivals", "Ultimate Team", "Pro Clubs", "Friendly"],
+    slug: "dota-2",
+    name: "Dota 2",
+    platforms: ["pc"],
+    teamSize: 5,
+    maxLobbySize: 10,
+    inGameIdLabel: "Friend ID",
+    ranks: ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"],
+    roles: ["Carry (Pos 1)", "Mid (Pos 2)", "Offlane (Pos 3)", "Soft Support (Pos 4)", "Hard Support (Pos 5)"],
+    modes: ["Ranked", "Unranked", "Turbo", "Custom Lobby"],
+  },
+  {
+    slug: "valorant",
+    name: "Valorant",
+    platforms: ["pc"],
+    teamSize: 5,
+    maxLobbySize: 10,
+    inGameIdLabel: "Riot ID (name#tag)",
+    ranks: ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Ascendant", "Immortal", "Radiant"],
+    roles: ["Duelist", "Controller", "Initiator", "Sentinel", "IGL"],
+    modes: ["Competitive", "Unrated", "Swiftplay", "Spike Rush", "Custom 5v5"],
+  },
+  {
+    slug: "genshin-impact",
+    name: "Genshin Impact",
+    platforms: ["pc", "mobile", "console"],
+    teamSize: 4,
+    maxLobbySize: 4,
+    inGameIdLabel: "UID",
+    ranks: ["AR 1-19", "AR 20-34", "AR 35-44", "AR 45-54", "AR 55-60"], // Adventure Rank bands
+    roles: ["Main DPS", "Sub DPS", "Support", "Healer"],
+    modes: ["Co-op Domain", "Spiral Abyss", "World Boss", "Exploration"],
   },
   {
     slug: "league-of-legends",
@@ -77,6 +88,28 @@ const GAMES: GameSeed[] = [
     roles: ["Top", "Jungle", "Mid", "ADC", "Support"],
     modes: ["Ranked Solo/Duo", "Ranked Flex", "Normal Draft", "ARAM", "Custom"],
   },
+  {
+    slug: "honor-of-kings",
+    name: "Honor of Kings",
+    platforms: ["mobile"],
+    teamSize: 5,
+    maxLobbySize: 10,
+    inGameIdLabel: "Player ID",
+    ranks: ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster", "Epic", "Legend"],
+    roles: ["Clash Lane", "Jungle", "Mid Lane", "Farm Lane", "Roaming"],
+    modes: ["Ranked", "Classic", "Custom 5v5"],
+  },
+  {
+    slug: "chess-com",
+    name: "Chess.com",
+    platforms: ["pc", "mobile"],
+    teamSize: 1,
+    maxLobbySize: 2,
+    inGameIdLabel: "Chess.com username",
+    ranks: ["Under 800", "800-1200", "1200-1600", "1600-2000", "2000+"], // rating bands
+    roles: [],
+    modes: ["Bullet", "Blitz", "Rapid", "Friendly"],
+  },
 ];
 
 // Settings defaults live in @chill-hub/shared so the API and seed always agree.
@@ -85,6 +118,9 @@ const SETTINGS: Record<string, unknown> = SETTING_DEFAULTS;
 const OBSOLETE_SETTINGS = ["max_active_lobbies_per_host"];
 
 async function seedGames() {
+  // Games dropped from the list are hidden, not deleted, so old lobbies keep their game.
+  const retired = await prisma.game.updateMany({ where: { slug: { notIn: GAMES.map((g) => g.slug) } }, data: { isActive: false } });
+  if (retired.count) console.log(`  hid ${retired.count} game(s) no longer on the list`);
   for (const [index, g] of GAMES.entries()) {
     const game = await prisma.game.upsert({
       where: { slug: g.slug },
@@ -94,6 +130,7 @@ async function seedGames() {
         teamSize: g.teamSize,
         maxLobbySize: g.maxLobbySize,
         inGameIdLabel: g.inGameIdLabel,
+        isActive: true,
         sortOrder: index,
       },
       create: {
@@ -103,6 +140,7 @@ async function seedGames() {
         teamSize: g.teamSize,
         maxLobbySize: g.maxLobbySize,
         inGameIdLabel: g.inGameIdLabel,
+        isActive: true,
         sortOrder: index,
       },
     });

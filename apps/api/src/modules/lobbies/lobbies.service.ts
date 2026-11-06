@@ -5,6 +5,8 @@ import { cursorArgs, toPage } from "../../common/http/pagination";
 import { Prisma } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { RealtimeBus } from "../realtime/realtime-bus";
+import { LobbyJobsService } from "./lobby-jobs.service";
 import { SettingsService } from "../settings/settings.service";
 import { isActiveStatus, lobbyInclude, toLobbyView } from "./lobby.presenter";
 import {
@@ -24,14 +26,18 @@ export class LobbiesService {
     private readonly prisma: PrismaService,
     private readonly settings: SettingsService,
     private readonly notifications: NotificationsService,
+    private readonly bus: RealtimeBus,
+    private readonly jobs: LobbyJobsService,
   ) {}
 
   async list(q: LobbiesListQuery, actor: Actor) {
     const where: Prisma.LobbyWhereInput = {
+      ...(q.gameIds?.length ? { gameId: { in: q.gameIds } } : {}),
       ...(q.gameId ? { gameId: q.gameId } : {}),
       ...(q.modeId ? { modeId: q.modeId } : {}),
       ...(q.visibility ? { visibility: q.visibility } : {}),
       ...(q.hostId ? { hostId: q.hostId } : {}),
+      ...(q.voiceChat !== undefined ? { voiceChat: q.voiceChat } : {}),
       ...(q.roleId ? { neededRoles: { some: { gameRoleId: q.roleId } } } : {}),
     };
     if (q.mine) {
@@ -67,7 +73,7 @@ export class LobbiesService {
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
       ...cursorArgs(q),
     });
-    return toPage(rows, q.limit, (row) => toLobbyView(row, actor.id));
+    return toPage(rows, q.limit, (row) => toLobbyView(row, actor));
   }
 
   async get(id: string, actor: Actor) {
@@ -79,7 +85,7 @@ export class LobbiesService {
       select: { userId: true, joinedAt: true, user: { select: { profile: { select: { displayName: true, avatarUrl: true } } } } },
     });
     return {
-      ...toLobbyView(row, actor.id),
+      ...toLobbyView(row, actor),
       members: members.map((m) => ({
         userId: m.userId,
         displayName: m.user.profile?.displayName ?? null,
@@ -120,6 +126,8 @@ export class LobbiesService {
       });
       return lobby.id;
     });
+    this.bus.lobbyChanged(lobbyId);
+    this.jobs.reschedule();
     return this.get(lobbyId, actor);
   }
 
@@ -165,7 +173,7 @@ export class LobbiesService {
           ...(input.minRankId !== undefined ? { minRankId: input.minRankId } : {}),
           ...(input.maxRankId !== undefined ? { maxRankId: input.maxRankId } : {}),
           ...(input.voiceChat !== undefined ? { voiceChat: input.voiceChat } : {}),
-          ...(input.startsAt !== undefined ? { startsAt: input.startsAt } : {}),
+          ...(input.startsAt !== undefined ? { startsAt: input.startsAt, reminderSentAt: null } : {}),
           ...(input.note !== undefined ? { note: input.note } : {}),
           ...(input.status !== undefined ? { status: input.status } : {}),
           ...(closing ? { closedAt: new Date() } : {}),
@@ -198,6 +206,8 @@ export class LobbiesService {
         );
       }
     });
+    this.bus.lobbyChanged(id);
+    this.jobs.reschedule();
     return this.get(id, actor);
   }
 
@@ -211,5 +221,6 @@ export class LobbiesService {
       if (others) throw new ConflictException("Players have already joined. Close the lobby instead of deleting it.");
     }
     await this.prisma.lobby.delete({ where: { id } });
+    this.bus.lobbyChanged(id);
   }
 }

@@ -4,6 +4,44 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Sign-up rework: no college email (2026-11-06)
+
+- Any email address can sign up (ACC-02). `allowed_email_domains` is now optional and empty by default; migration `20261106120000_open_email_domain` clears the old `yourcollege.edu` placeholder.
+- Sign-up step 1 asks for the student ID number first, written like `22/29484`, then the club join code (if one is set), name, email and password. Step 3 only asks for the main game. A taken ID is reported at once; an unverified sign-up releases its ID after 10 minutes (ACC-01, 12, 13).
+- New setting `signup_join_code`, hidden from the public (`GET /settings/public` only says whether one is needed). Admins change it in a card on the `/admin` page.
+- A student waiting for approval can look around: the API lets them read everything but never shows them lobby codes, and the app shows Home and Lobbies with a "waiting" card. They can't create, join or change anything until an admin approves them. The old waiting screen is gone (ACC-06). Spec v1.0.
+- The student ID number can still be corrected after a rejection. The ID list check (ACC-14) waits until the club has the data.
+- Tests updated, with new ones for the ID format, join code, duplicate IDs, and waiting students.
+
+### Step 3d: Real-time notifications (2026-10-31)
+
+- Socket.IO: lobby list, lobby page, chat and the unread count update live, replacing the timed refreshes. Events only signal what changed (NFR-02, NFR-06).
+- Inbox with unread badge and mark all read, and notification settings with Push, Email and In-app switches (NOT-03, NOT-04).
+- Delivery by push (through Expo) and email, according to preferences (NOT-01). Android push needs a development build: see [the setup guide](docs/mobile/push-setup.md).
+- Lobby expiry, start reminders and chat clean-up, on a timer that sleeps until the next job is due (LOB-09, 11, 12). Spec v0.9.
+- Migration `20261031120000_notification_delivery`. Chat no longer creates inbox items.
+
+### Staff accounts and lobbies (2026-10-30)
+
+- Moderators and admins can't find, create, join or chat in lobbies, even with the player role. The API refuses them, and the app hides the Lobbies and Create tabs and My lobbies. Spec v0.8.
+- Being given either role takes the person out of their active lobbies, closes any they host, and cancels their pending requests.
+- `admin:create` and the demo admin no longer get the player role. Admins can still delete a lobby for moderation.
+
+### Step 3c: Lobby screens (2026-10-30)
+
+- Browse with game chips and filters (mode, rank, role, voice, start time, type), 3-step create, and edit (LOB-01, 02, 03, 06, 07).
+- Lobby page: code with copy, members, take a slot, request to join and cancel, leave, host accept, decline, remove and close, and chat that refreshes every few seconds (LOB-04, 05, 10, 11).
+- Home shows "My lobbies"; Lobbies and Create join the bottom tabs.
+- Spec v0.7: lobbies can be scheduled up to 24 hours ahead, not 14 days. The API enforces it.
+- API: `voiceChat` browse filter, `viewer.joinRequestId` on lobbies, and `max_active_lobbies_per_player` is now a public setting.
+
+### Step 3b: Profile editing (2026-10-30)
+
+- Bottom tabs for approved players, and a required display name screen at the first login after approval.
+- My profile: details, games with ranks and roles, and reputation. Edit profile: display name, bio, department, year, and adding, editing and removing games (PRO-01, PRO-03).
+- `/players/:id`: another player's public profile, without email, real name or student ID (PRO-04).
+- Avatars show initials until file storage is set up.
+
 ### Step 3a, Part 3: Admin approval queue (2026-10-30)
 
 - `/admin` on the website, for admins only: pending, approved and rejected tabs, applicant details, approve, and reject with a required reason (ready-made reasons included). Stacks into one column on narrow screens (ACC-04, ADM-02).

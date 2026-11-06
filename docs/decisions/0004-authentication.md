@@ -1,3 +1,5 @@
+> **Update 2026-11-06:** the college-domain rule and the sign-up order described here were changed by [ADR 0005](0005-signup-without-college-email.md).
+
 # ADR 0004: Authentication
 
 **Status:** Accepted (2026-10-30)

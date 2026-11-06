@@ -1,4 +1,4 @@
-import { DOMAIN, API, as, createTestApp, makeUser, resetDb, seededGame, type TestContext } from "./helpers";
+import { DOMAIN, API, as, createTestApp, lobbyBody, makeUser, newStudentId, resetDb, seededGame, type TestContext } from "./helpers";
 
 const AUTH = `${API}/auth`;
 const PASSWORD = "correct-horse-1";
@@ -17,12 +17,14 @@ describe("Authentication (step 3a)", () => {
 
   const newEmail = () => `auth${Date.now().toString(36)}${++counter}@${DOMAIN}`;
   const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
-  const details = (studentIdNumber = `S-${Date.now().toString(36)}${++counter}`) => ({
-    studentIdNumber,
+  /** Sign-up step 3: the main game. The student ID number is only sent to correct it. */
+  const details = (studentIdNumber?: string) => ({
+    ...(studentIdNumber ? { studentIdNumber } : {}),
     inGameAccount: { gameId, inGameName: "player#1" },
   });
-  const signUp = (email: string, password = PASSWORD) =>
-    ctx.http().post(`${AUTH}/sign-up/email`).send({ name: "New Student", email, password });
+  /** Sign-up step 1: a new student ID number each time, unless the test gives one. */
+  const signUp = (email: string, password = PASSWORD, extra: Record<string, unknown> = {}) =>
+    ctx.http().post(`${AUTH}/sign-up/email`).send({ name: "New Student", email, password, studentIdNumber: newStudentId(), ...extra });
   const logIn = (email: string, password = PASSWORD) =>
     ctx.http().post(`${AUTH}/sign-in/email`).send({ email, password });
 
@@ -38,12 +40,6 @@ describe("Authentication (step 3a)", () => {
   }
 
   describe("sign-up", () => {
-    it("ACC-02: refuses emails outside the college domains", async () => {
-      const res = await signUp("someone@gmail.com").expect(400);
-      expect(res.body.message).toMatch(/college email/);
-      expect(ctx.mail.sent.some((m) => m.to === "someone@gmail.com")).toBe(false);
-    });
-
     it("refuses short passwords", async () => {
       await signUp(newEmail(), "short").expect(400);
     });
@@ -57,14 +53,15 @@ describe("Authentication (step 3a)", () => {
 
     it("a wrong code is refused; the right one logs the user in as pending", async () => {
       const email = newEmail();
-      await signUp(email).expect(200);
+      const id = newStudentId();
+      await signUp(email, PASSWORD, { studentIdNumber: id }).expect(200);
       const code = ctx.mail.lastCode(email)!;
       const wrong = code === "000000" ? "111111" : "000000";
       await ctx.http().post(`${AUTH}/email-otp/verify-email`).send({ email, otp: wrong }).expect(400);
 
       const res = await ctx.http().post(`${AUTH}/email-otp/verify-email`).send({ email, otp: code }).expect(200);
       const me = await ctx.http().get(`${API}/me`).set(bearer(res.body.token)).expect(200);
-      expect(me.body).toMatchObject({ email, status: "pending", emailVerified: true, studentIdNumber: null, roles: [] });
+      expect(me.body).toMatchObject({ email, status: "pending", emailVerified: true, studentIdNumber: id, roles: [] });
     });
 
     it("stores no plain password or plain code", async () => {
@@ -89,7 +86,7 @@ describe("Authentication (step 3a)", () => {
   });
 
   describe("sign-up step 3 and approval", () => {
-    it("an approval request needs the student ID number and an in-game ID", async () => {
+    it("an approval request needs an in-game ID", async () => {
       const { token } = await verifiedUser();
       await ctx.http().post(`${API}/me/approval-requests`).set(bearer(token)).expect(400);
     });
@@ -103,17 +100,16 @@ describe("Authentication (step 3a)", () => {
       await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(token)).send(details()).expect(409);
     });
 
-    it("refuses a student ID number that's already used, and unknown games", async () => {
+    it("a corrected student ID number can't be one that's already used; unknown games are refused", async () => {
       const first = await verifiedUser();
-      const shared = `S-shared-${Date.now().toString(36)}`;
-      await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(first.token)).send(details(shared)).expect(200);
+      const taken = (await ctx.prisma.user.findUniqueOrThrow({ where: { email: first.email } })).studentIdNumber!;
       const second = await verifiedUser();
-      await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(second.token)).send(details(shared)).expect(409);
+      await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(second.token)).send(details(taken)).expect(409);
       await ctx
         .http()
         .put(`${API}/me/sign-up-details`)
         .set(bearer(second.token))
-        .send({ studentIdNumber: "S-unknown-game", inGameAccount: { gameId: "no-such-game", inGameName: "x" } })
+        .send({ inGameAccount: { gameId: "no-such-game", inGameName: "x" } })
         .expect(400);
     });
 
@@ -130,7 +126,8 @@ describe("Authentication (step 3a)", () => {
         .expect(200);
       expect(ctx.mail.sent.at(-1)).toMatchObject({ to: email, text: expect.stringContaining("Student ID number is wrong") });
 
-      const fixed = details();
+      const fixedId = newStudentId();
+      const fixed = details(fixedId);
       const second = await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(token)).send(fixed).expect(200);
       expect(second.body.id).not.toBe(first.body.id);
       const history = await ctx.http().get(`${API}/me/approval-requests`).set(bearer(token)).expect(200);
@@ -142,7 +139,124 @@ describe("Authentication (step 3a)", () => {
       const login = await logIn(email).expect(200);
       await ctx.http().get(`${API}/lobbies`).set(bearer(login.body.token)).expect(200);
       const me = await ctx.http().get(`${API}/me`).set(bearer(login.body.token)).expect(200);
-      expect(me.body).toMatchObject({ status: "approved", roles: ["player"], studentIdNumber: fixed.studentIdNumber });
+      expect(me.body).toMatchObject({ status: "approved", roles: ["player"], studentIdNumber: fixedId });
+    });
+  });
+
+  describe("sign-up rules: student ID, join code, any email", () => {
+    let admin: { id: string };
+    const setSetting = (key: string, value: unknown) =>
+      ctx.http().put(`${API}/settings/${key}`).set(as(admin.id)).send({ value }).expect(200);
+    beforeAll(async () => {
+      admin = await makeUser(ctx, { roles: ["admin", "player"] });
+    });
+
+    it("any email can sign up when no email domain is set", async () => {
+      await signUp("someone@gmail.com").expect(200);
+      expect(ctx.mail.sent.some((m) => m.to === "someone@gmail.com")).toBe(true);
+    });
+
+    it("ACC-02: when email domains are set, other emails are refused", async () => {
+      await setSetting("allowed_email_domains", [DOMAIN]);
+      try {
+        const res = await signUp("other@gmail.com").expect(400);
+        expect(res.body.message).toMatch(/college email/);
+        await signUp(newEmail()).expect(200);
+      } finally {
+        await setSetting("allowed_email_domains", []);
+      }
+    });
+
+    it("needs a student ID number written like 22/29484", async () => {
+      const missing = await ctx.http().post(`${AUTH}/sign-up/email`).send({ name: "N", email: newEmail(), password: PASSWORD }).expect(400);
+      expect(missing.body.message).toMatch(/like 22\/29484/);
+      for (const bad of ["S-123", "2229484", "22/12", "22-29484"]) {
+        await signUp(newEmail(), PASSWORD, { studentIdNumber: bad }).expect(400);
+      }
+    });
+
+    it("needs the club's join code when one is set, ignoring case and spaces; the code stays private", async () => {
+      await setSetting("signup_join_code", "Chill-2026");
+      try {
+        const pub = await ctx.http().get(`${API}/settings/public`).expect(200);
+        expect(pub.body.signup_join_code_required).toBe(true);
+        expect(JSON.stringify(pub.body)).not.toMatch(/chill-2026/i);
+
+        const missing = await signUp(newEmail()).expect(400);
+        expect(missing.body.message).toMatch(/join code/);
+        await signUp(newEmail(), PASSWORD, { joinCode: "wrong" }).expect(400);
+        await signUp(newEmail(), PASSWORD, { joinCode: "  chill-2026 " }).expect(200);
+      } finally {
+        await setSetting("signup_join_code", "");
+      }
+      const pub = await ctx.http().get(`${API}/settings/public`).expect(200);
+      expect(pub.body.signup_join_code_required).toBe(false);
+    });
+
+    it("a student ID can't be used twice, whether or not the first sign-up is verified yet", async () => {
+      const id = newStudentId();
+      const email = newEmail();
+      await signUp(email, PASSWORD, { studentIdNumber: id }).expect(200);
+
+      const unverified = await signUp(newEmail(), PASSWORD, { studentIdNumber: id }).expect(400);
+      expect(unverified.body.message).toMatch(/isn't verified yet/);
+
+      await ctx.http().post(`${AUTH}/email-otp/verify-email`).send({ email, otp: ctx.mail.lastCode(email) }).expect(200);
+      const taken = await signUp(newEmail(), PASSWORD, { studentIdNumber: id }).expect(400);
+      expect(taken.body.message).toMatch(/already registered/);
+    });
+
+    it("an unverified sign-up whose code has expired no longer holds the student ID", async () => {
+      const id = newStudentId();
+      const stale = newEmail();
+      await signUp(stale, PASSWORD, { studentIdNumber: id }).expect(200);
+      await ctx.prisma.user.update({ where: { email: stale }, data: { createdAt: new Date(Date.now() - 11 * 60_000) } });
+
+      const fresh = newEmail();
+      await signUp(fresh, PASSWORD, { studentIdNumber: id }).expect(200);
+      expect(await ctx.prisma.user.findUnique({ where: { email: stale } })).toBeNull();
+      expect((await ctx.prisma.user.findUniqueOrThrow({ where: { email: fresh } })).studentIdNumber).toBe(id);
+    });
+  });
+
+  describe("waiting for approval: look around, don't act (ACC-06)", () => {
+    it("a student with details in can browse but sees no lobby codes and can't act; approval changes that", async () => {
+      const host = await makeUser(ctx);
+      const admin = await makeUser(ctx, { roles: ["admin", "player"] });
+      const lobby = (await ctx.http().post(`${API}/lobbies`).set(as(host.id)).send(await lobbyBody(ctx)).expect(201)).body;
+
+      const { token } = await verifiedUser();
+      const request = (await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(token)).send(details()).expect(200)).body;
+
+      const list = await ctx.http().get(`${API}/lobbies`).set(bearer(token)).expect(200);
+      expect(list.body.items.map((l: { id: string }) => l.id)).toContain(lobby.id);
+      expect(JSON.stringify(list.body)).not.toContain("7KQ2-XP");
+      const detail = await ctx.http().get(`${API}/lobbies/${lobby.id}`).set(bearer(token)).expect(200);
+      expect(detail.body).toMatchObject({ lobbyCode: null, codeVisible: false });
+      await ctx.http().get(`${API}/games`).set(bearer(token)).expect(200);
+
+      const create = await ctx.http().post(`${API}/lobbies`).set(bearer(token)).send(await lobbyBody(ctx)).expect(403);
+      expect(create.body.message).toMatch(/look around/);
+      await ctx.http().post(`${API}/lobbies/${lobby.id}/members`).set(bearer(token)).expect(403);
+      await ctx.http().put(`${API}/me/profile`).set(bearer(token)).send({ displayName: "Waiting" }).expect(200); // own details stay editable
+
+      await ctx.http().patch(`${API}/approval-requests/${request.id}`).set(as(admin.id)).send({ decision: "approve" }).expect(200);
+      const approved = await ctx.http().get(`${API}/lobbies/${lobby.id}`).set(bearer(token)).expect(200);
+      expect(approved.body).toMatchObject({ lobbyCode: "7KQ2-XP", codeVisible: true });
+      await ctx.http().post(`${API}/lobbies/${lobby.id}/members`).set(bearer(token)).expect(201);
+    });
+
+    it("a rejected student can't browse until they re-apply and are approved", async () => {
+      const admin = await makeUser(ctx, { roles: ["admin", "player"] });
+      const { token } = await verifiedUser();
+      const request = (await ctx.http().put(`${API}/me/sign-up-details`).set(bearer(token)).send(details()).expect(200)).body;
+      await ctx
+        .http()
+        .patch(`${API}/approval-requests/${request.id}`)
+        .set(as(admin.id))
+        .send({ decision: "reject", rejectReason: "Details don't match" })
+        .expect(200);
+      await ctx.http().get(`${API}/lobbies`).set(bearer(token)).expect(403);
     });
   });
 

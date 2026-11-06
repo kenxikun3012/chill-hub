@@ -3,6 +3,7 @@ import type { JoinRequestsListQuery, JoinRequestUpdateInput } from "@chill-hub/s
 import type { Actor } from "../../common/auth/actor";
 import { PrismaService } from "../../prisma/prisma.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { RealtimeBus } from "../realtime/realtime-bus";
 import { SettingsService } from "../settings/settings.service";
 import { IN_GAME_ACCOUNT_INCLUDE, toInGameAccountView } from "../profiles/profiles.service";
 import { RatingsService } from "../ratings/ratings.service";
@@ -19,6 +20,7 @@ export class LobbyMembersService {
     private readonly notifications: NotificationsService,
     private readonly lobbies: LobbiesService,
     private readonly ratings: RatingsService,
+    private readonly bus: RealtimeBus,
   ) {}
 
   async members(lobbyId: string) {
@@ -66,6 +68,8 @@ export class LobbyMembersService {
         tx,
       );
     });
+    this.bus.lobbyChanged(lobbyId);
+    this.bus.chatMessage(lobbyId);
     return this.lobbies.get(lobbyId, actor);
   }
 
@@ -96,6 +100,8 @@ export class LobbyMembersService {
         );
       }
     });
+    this.bus.lobbyChanged(lobbyId);
+    this.bus.chatMessage(lobbyId);
   }
 
   // ---------- join requests (private lobbies) ----------
@@ -125,6 +131,7 @@ export class LobbyMembersService {
       );
       return saved;
     });
+    this.bus.lobbyChanged(lobbyId);
     return { id: request.id, lobbyId, status: request.status, createdAt: request.createdAt };
   }
 
@@ -210,6 +217,8 @@ export class LobbyMembersService {
         );
       }
     });
+    this.bus.lobbyChanged(lobbyId);
+    this.bus.chatMessage(lobbyId);
     const updated = await this.prisma.lobbyJoinRequest.findUniqueOrThrow({ where: { id: requestId } });
     return { id: updated.id, lobbyId, status: updated.status, createdAt: updated.createdAt, respondedAt: updated.respondedAt };
   }

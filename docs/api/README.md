@@ -62,10 +62,10 @@ Better Auth runs inside the API at `/api/v1/auth` (see [ADR 0004](../decisions/0
 
 | Step | Request | Body | Result |
 |---|---|---|---|
-| Sign-up 1 | `POST /auth/sign-up/email` | `name, email, password` | Emails a 6-digit code. College domains only; password 8–128 characters |
+| Sign-up 1 | `POST /auth/sign-up/email` | `studentIdNumber, joinCode?, name, email, password` | Emails a 6-digit code. The student ID must be written like `22/29484` and not be in use. `joinCode` is needed when the club has set one (check `signup_join_code_required` in `GET /settings/public`). Any email works unless admins set `allowed_email_domains`. Password 8–128 characters |
 | Sign-up 2 | `POST /auth/email-otp/verify-email` | `email, otp` | Logged in as pending; returns `token` |
 | Resend code | `POST /auth/email-otp/send-verification-otp` | `email, type: "email-verification"` | Emails a new code |
-| Sign-up 3 | `PUT /me/sign-up-details` | `studentIdNumber, inGameAccount: { gameId, inGameName, rankId?, preferredRoleIds? }` | Saves details and joins the approval queue |
+| Sign-up 3 | `PUT /me/sign-up-details` | `inGameAccount: { gameId, inGameName, rankId?, preferredRoleIds? }`, `studentIdNumber?` (only to correct it after a rejection) | Saves the main game and joins the approval queue |
 | Log in | `POST /auth/sign-in/email` | `email, password` | Returns `token`. 403 if the email isn't verified (a new code is sent) or the account is banned |
 | Log out | `POST /auth/sign-out` | `{}` | Ends this session |
 | Forgot password | `POST /auth/email-otp/request-password-reset` | `email` | Always 200; emails a code if the account exists |
@@ -85,6 +85,25 @@ Better Auth runs inside the API at `/api/v1/auth` (see [ADR 0004](../decisions/0
 
 **Production settings:** `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL`, `RESEND_API_KEY` and `MAIL_FROM` are required, or the API refuses to start. Run the API behind Caddy with its port closed to the internet, because rate limiting trusts `x-forwarded-for`.
 
+## Live updates
+
+Connect with Socket.IO to the server's root (not `/api/v1`). Web sends its session cookie; the app passes `auth: { token }`. Events only say what changed, and clients reload through the API, so lobby codes and messages never travel over the socket.
+
+| Event | Who gets it | Means |
+|---|---|---|
+| `notifications:changed` | That user | The inbox has something new |
+| `lobbies:changed` | Approved players | Reload the lobby list |
+| `lobby:changed` `{ lobbyId }` | Watchers of that lobby | Reload that lobby |
+| `chat:message` `{ lobbyId }` | Watchers of that lobby | Reload its chat, which only members can do |
+
+Send `lobby:watch` or `lobby:unwatch` with a lobby ID to start or stop watching. Staff and unapproved users are ignored. Rooms live in the API process, so a second API server would need a shared Socket.IO adapter.
+
+## Delivery and scheduled jobs
+
+Notifications are stored first, then delivered within about a second by live signal, push (through Expo) and email, according to each user's preferences. Each is attempted once. Chat is push only and opt-in, with no inbox item.
+
+`LobbyJobsService` handles lobby expiry, start reminders and chat clean-up. It works out when the next job is due and sleeps until then, at most 6 hours, so an idle app doesn't keep a Neon database awake. Set `JOBS_ENABLED=false` to turn it off.
+
 ## 4. Access rules
 
 Applied to every request by the guard (`src/common/auth/dev-auth.guard.ts`):
@@ -92,9 +111,12 @@ Applied to every request by the guard (`src/common/auth/dev-auth.guard.ts`):
 | Account status | Can do |
 |---|---|
 | approved | Everything their roles allow |
-| pending / rejected | Only routes marked *pending OK* below: own account, profile, in-game IDs, notifications, approval requests (ACC-06) |
+| pending, details sent (waiting for an admin) | Read (GET) anything, plus the *pending OK* routes below. Lobby codes are always hidden from them. No creating, joining or changing (ACC-06) |
+| pending, details not sent yet / rejected | Only routes marked *pending OK* below: own account, profile, in-game IDs, notifications, approval requests (ACC-06) |
 | suspended | Read (GET) anything; no changes until `suspendedUntil` (MOD-06) |
 | banned / deleted | Nothing |
+
+Moderators and admins get 403 on all `/lobbies` routes, even with the player role, except that admins can delete a lobby. Being given either role takes the person out of their active lobbies and closes any they host.
 
 Roles: **player** (every approved user), **moderator** (read users), **organizer** (Phase 2), **admin** (manage users, approvals, games, settings; delete any lobby).
 
@@ -152,7 +174,7 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 
 | Method | Path | Who | Purpose |
 |---|---|---|---|
-| GET | `/lobbies` | | Browse. Filters: `gameId`, `modeId`, `status` (default `open`), `visibility`, `roleId`, `rankId` (lobbies whose range includes this rank), `hostId`, `startsAfter`, `startsBefore`, `mine=true` (my active lobbies) |
+| GET | `/lobbies` | | Browse. Filters: `gameId`, `modeId`, `status` (default `open`), `visibility`, `roleId`, `rankId` (lobbies whose range includes this rank), `hostId`, `voiceChat`, `startsAfter`, `startsBefore`, `mine=true` (my active lobbies) |
 | GET | `/lobbies/:id` | | Detail with member list. `lobbyCode` is `null` when you may not see it |
 | POST | `/lobbies` | | Create (you become host and first member) |
 | PATCH | `/lobbies/:id` | host | Edit any field, change code, `status: "in_progress"` or `"closed"` |
@@ -172,7 +194,7 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 | Method | Path | Who | Purpose |
 |---|---|---|---|
 | GET | `/users`, `/users/:id` | 🛡 | Search users (`?q=`, `status`, `role`) |
-| POST | `/users` | 👑 | Create a user (college email only) |
+| POST | `/users` | 👑 | Create a user (student ID like `22/29484`; email domain checked only if admins set domains) |
 | PATCH | `/users/:id` | 👑 | Name, status, `suspendedUntil` (banning logs them out) |
 | PUT | `/users/:id/roles` | 👑 | Replace roles |
 | DELETE | `/users/:id` | 👑 | Delete account (personal data removed) |
@@ -185,7 +207,7 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 |---|---|---|
 | Private lobby codes only reach the host and active members; closed/expired lobbies show no code | NFR-06, LOB-03, LOB-09 | `canSeeCode()` in `lobby.presenter.ts`, the single place that decides |
 | A lobby needs a code; capacity ≤ the game's max lobby size and ≥ current players; mode, ranks and roles must belong to the game; lowest rank ≤ highest | LOB-01, LOB-02 | `lobby-rules.ts` |
-| Start time between 5 minutes ago and 14 days ahead | LOB-01 | `lobby-rules.ts` |
+| Start time between 5 minutes ago and 24 hours ahead | LOB-01 | `lobby-rules.ts` |
 | A player can be in at most `max_active_lobbies_per_player` active lobbies (hosting counts) | LOB-13 | checked on create, join and accept |
 | Lobby becomes `full` / back to `open` as players join and leave; full lobbies are hidden from browse | LOB-08 | `syncFullness()` |
 | Open lobbies more than `lobby_expiry_hours` past their start are hidden from browse (marked `expired` by a job in step 3d) | LOB-09 | `LobbiesService.list` |
@@ -193,7 +215,9 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 | Closing cancels pending requests, makes chat read-only and asks everyone to rate | LOB-11, REP-01 | `LobbiesService.update` |
 | Ratings: only after the lobby ends, only between players who were in it, not yourself, changeable until `editable_until` (24 h) | REP-01, REP-03 | `RatingsService` |
 | Capacity and limit checks lock the lobby/user row in a transaction, so two players can't take the last slot at once | | `lockLobby()`, `lockUser()` |
-| Only college email domains can be used | ACC-02 | `SettingsService.isEmailDomainAllowed` |
+| Any email can sign up, unless admins set allowed domains | ACC-02 | `SettingsService.isEmailDomainAllowed` |
+| Sign-up needs a valid, unused student ID number and the club's join code (when set); an unverified sign-up releases its ID after the 10-minute code expires | ACC-01, 12, 13 | `AuthService.checkSignUp` |
+| A student waiting for approval can browse but never sees lobby codes | ACC-06, NFR-06 | `canSeeCode()` and the auth guard |
 | Approving adds the `player` role; both decisions notify the student; a reason is required to reject | ACC-04, ACC-05 | `ApprovalsService.decide` |
 | Notifications respect each user's in-app setting per group; account notifications always arrive | NOT-03 | `NotificationsService.notify` |
 
@@ -201,7 +225,7 @@ Real-time delivery (WebSocket events, push and email) is **not** in this step. T
 
 ## 7. Testing
 
-The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 74 tests in 6 files, covering every rule in section 6.
+The end-to-end tests make real HTTP requests to the whole app. They live in [`apps/api/test`](../../apps/api/test): 98 tests in 9 files, covering every rule in section 6.
 
 **Setup (once):** in Neon, create a branch called `test` (from `dev`), then add to `apps/api/.env`:
 

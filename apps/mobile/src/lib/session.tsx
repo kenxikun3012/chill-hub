@@ -1,6 +1,7 @@
 import type { RoleName, UserStatus } from "@chill-hub/shared";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, ApiError, tokenStore } from "./api";
+import { unregisterPush } from "./push";
 
 export interface Account {
   id: string;
@@ -9,9 +10,13 @@ export interface Account {
   studentIdNumber: string | null;
   status: UserStatus;
   roles: RoleName[];
+  profile: { displayName: string } | null;
   suspendedUntil: string | null;
   createdAt: string;
 }
+
+/** Moderators and admins run the app; they don't use lobbies. */
+export const isStaffAccount = (account: Account | null) => !!account?.roles.some((role) => role === "admin" || role === "moderator");
 
 export interface ApprovalRequest {
   id: string;
@@ -21,7 +26,7 @@ export interface ApprovalRequest {
 }
 
 /** Which part of the app the user may see (ACC-06). */
-export type Stage = "loading" | "guest" | "details" | "pending" | "rejected" | "approved";
+export type Stage = "loading" | "guest" | "details" | "pending" | "rejected" | "setup" | "approved";
 
 interface SessionValue {
   stage: Stage;
@@ -40,7 +45,7 @@ function stageOf(account: Account | null, latest: ApprovalRequest | null): Stage
   if (!account) return "guest";
   if (account.status === "rejected") return "rejected";
   if (account.status === "pending") return latest?.status === "pending" ? "pending" : "details";
-  return "approved";
+  return account.profile ? "approved" : "setup";
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -83,6 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await refresh();
       },
       logOut: async () => {
+        await unregisterPush();
         await api("/auth/sign-out", { method: "POST", body: {} }).catch(() => undefined);
         await tokenStore.clear();
         setAccount(null);
