@@ -13,7 +13,13 @@ import { SettingsService } from "../src/modules/settings/settings.service";
 import { testDatabaseEnv } from "./test-env";
 
 export const API = "/api/v1";
-export const DOMAIN = SETTING_DEFAULTS.allowed_email_domains[0]!;
+/** Email domain for test accounts. Sign-up accepts any email unless an admin sets allowed domains. */
+export const DOMAIN = "chillhub.test";
+
+let studentIdCounter = 0;
+/** A valid, unique student ID number in the college's form (22/29484). */
+export const newStudentId = () =>
+  `22/${String(Date.now() % 100_000).padStart(5, "0")}${String(++studentIdCounter % 100).padStart(2, "0")}`;
 
 export interface TestContext {
   app: INestApplication;

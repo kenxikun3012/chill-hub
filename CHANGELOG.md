@@ -4,6 +4,15 @@ All notable changes to Chill Hub. Each entry belongs to an increment and step fr
 
 ## [Unreleased]: MVP-1
 
+### Sign-up rework: no college email (2026-11-06)
+
+- Any email address can sign up (ACC-02). `allowed_email_domains` is now optional and empty by default; migration `20261106120000_open_email_domain` clears the old `yourcollege.edu` placeholder.
+- Sign-up step 1 asks for the student ID number first, written like `22/29484`, then the club join code (if one is set), name, email and password. Step 3 only asks for the main game. A taken ID is reported at once; an unverified sign-up releases its ID after 10 minutes (ACC-01, 12, 13).
+- New setting `signup_join_code`, hidden from the public (`GET /settings/public` only says whether one is needed). Admins change it in a card on the `/admin` page.
+- A student waiting for approval can look around: the API lets them read everything but never shows them lobby codes, and the app shows Home and Lobbies with a "waiting" card. They can't create, join or change anything until an admin approves them. The old waiting screen is gone (ACC-06). Spec v1.0.
+- The student ID number can still be corrected after a rejection. The ID list check (ACC-14) waits until the club has the data.
+- Tests updated, with new ones for the ID format, join code, duplicate IDs, and waiting students.
+
 ### Step 3d: Real-time notifications (2026-10-31)
 
 - Socket.IO: lobby list, lobby page, chat and the unread count update live, replacing the timed refreshes. Events only signal what changed (NFR-02, NFR-06).

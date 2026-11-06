@@ -110,7 +110,7 @@ export class UsersService {
 
   /** Someone becoming staff can't use lobbies any more, so they're taken out while they still can be. */
   private async leaveLobbies(user: Awaited<ReturnType<UsersService["get"]>>) {
-    const self: Actor = { id: user.id, name: user.name, email: user.email, status: user.status, suspendedUntil: user.suspendedUntil, roles: user.roles };
+    const self: Actor = { id: user.id, name: user.name, email: user.email, status: user.status, suspendedUntil: user.suspendedUntil, awaitingApproval: false, roles: user.roles };
     const memberships = await this.prisma.lobbyMember.findMany({
       where: { userId: user.id, leftAt: null, lobby: { status: { in: [...ACTIVE_LOBBY_STATUSES] } } },
       select: { lobbyId: true, lobby: { select: { hostId: true } } },

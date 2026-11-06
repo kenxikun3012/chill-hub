@@ -3,7 +3,7 @@
 // Sign in with the header x-dev-user-id: <id printed below> (needs DEV_AUTH=true).
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { SETTING_DEFAULTS, type RoleName } from "@chill-hub/shared";
+import type { RoleName } from "@chill-hub/shared";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 if (process.env["NODE_ENV"] === "production") {
@@ -14,7 +14,8 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env["DATABASE_URL"] }),
 });
 
-const DOMAIN = SETTING_DEFAULTS.allowed_email_domains[0]!;
+// Demo accounts only. Real sign-ups can use any email, so this is just a label for the demo users.
+const DOMAIN = "yourcollege.edu";
 const HOUR = 60 * 60 * 1000;
 
 type DemoUser = { id: string; handle: string; name: string; roles: RoleName[] };

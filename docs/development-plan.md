@@ -14,6 +14,7 @@ Goal: a usable first release covering sign-up with admin approval, profiles, lob
 | 3b | **Profile editing**: profile, in-game IDs, ranks and roles | ✅ Built (2026-10-30): initials instead of photos for now |
 | 3c | **Lobby CRUD**: browse/filter, 3-step create, public/private join, host view, lobby chat | ✅ Built (2026-10-30): chat and lobbies refresh every few seconds until step 3d |
 | 3d | **Real-time notifications**: in-app inbox, push, preferences, live lobby updates | ✅ Built (2026-10-31). Android push is built but not yet tried on a device: see the [setup guide](mobile/push-setup.md) |
+| 3d+ | **Sign-up rework**: no email domain, student ID first, club join code, students waiting for approval can look around | ✅ Built (2026-11-06): see [the decisions below](#sign-up-rework) |
 | 3e | **Post-match feedback**: rating screen, reputation on profiles | ⬜ |
 
 Each feature in step 3 is one agile iteration: build the UI (app + web) and connect it to the backend, test it, then update the docs and changelog.
@@ -91,9 +92,25 @@ Decided 2026-10-31 (spec v0.9). Jobs run on a timer inside the API, with no Redi
 
 **Next, to discuss:** the college has no email domain, so the plan is to remove the domain restriction and ask for the student ID first at sign-up.
 
+## Sign-up rework
+
+Decided 2026-11-06 (spec v1.0, [ADR 0005](decisions/0005-signup-without-college-email.md)). The college has no email domain, so the email check is replaced by other safeguards.
+
+| Topic | Choice |
+|---|---|
+| Email | Any address works, and the code proves it's real. Admins can still list allowed domains (empty by default) |
+| Sign-up order | 1. Student ID number (like `22/29484`), club join code if set, name, email, password. 2. Email code. 3. Main game |
+| Join code | One shared code in settings, hidden from the public. Admins change it on the `/admin` page |
+| Identity check | An admin compares the ID number by hand, as before. Checking against the club's list of IDs and names comes later (ACC-14), once the data is collected |
+| Waiting for approval | A student whose details are in can look at lobbies, games and profiles, but can't create, join or change anything, and never sees lobby codes. A rejected student sees only their status page |
+| Unfinished sign-ups | The ID number is claimed at step 1. If the email is never verified, the ID is released once the 10-minute code has expired |
+
+The wireframes still show the earlier sign-up order.
+
 ## Later increments (from the spec)
 
 - ID photo upload with 30-day deletion (ACC-08), and profile photos (PRO-01), once file storage is set up
+- Student ID list import and check (ACC-14), once the club has collected the data
 - Knowledge sharing: guides, Q&A, news
 - Reporting and moderation queue, audit log
 - Admin panel: dashboard, users, games catalogue, settings

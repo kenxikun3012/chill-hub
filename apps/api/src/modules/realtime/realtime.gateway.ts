@@ -47,13 +47,17 @@ export class RealtimeGateway implements OnGatewayInit {
   private async admit(socket: Socket) {
     const userId = await this.identify(socket);
     if (!userId) throw new Error("No session");
-    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null }, include: { roles: true } });
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      include: { roles: true, approvalRequests: { where: { status: "pending" }, select: { id: true }, take: 1 } },
+    });
     if (!user || user.status === "banned") throw new Error("Account can't connect");
 
     await socket.join(userRoom(user.id));
-    // Same rule as the lobby routes: approved players only, and never staff.
+    // Same rule as the lobby routes: approved players, and students waiting to be approved (details sent) who can only look. Never staff.
     const staff = user.roles.some((r) => r.role === "admin" || r.role === "moderator");
-    const canUseLobbies = !staff && (user.status === "approved" || user.status === "suspended");
+    const waiting = user.status === "pending" && user.approvalRequests.length > 0;
+    const canUseLobbies = !staff && (user.status === "approved" || user.status === "suspended" || waiting);
     socket.data = { canUseLobbies };
     if (canUseLobbies) await socket.join(BROWSE_ROOM);
   }

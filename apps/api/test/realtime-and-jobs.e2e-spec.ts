@@ -240,7 +240,7 @@ describe("Delivery, lobby jobs and live updates (step 3d)", () => {
       expect(await quiet).toBe(true);
     });
 
-    it("gives staff and pending users no lobby signals", async () => {
+    it("gives staff, and pending students who haven't sent their details, no lobby signals", async () => {
       const host = await makeUser(ctx);
       const staff = await connect({ devUserId: (await makeUser(ctx, { roles: ["moderator"] })).id });
       const pending = await connect({ devUserId: (await makeUser(ctx, { status: "pending" })).id });
@@ -250,6 +250,20 @@ describe("Delivery, lobby jobs and live updates (step 3d)", () => {
       const quiet = Promise.all([never(staff, "lobby:changed"), never(pending, "lobby:changed"), never(staff, "lobbies:changed")]);
       await ctx.http().patch(`${API}/lobbies/${lobby.id}`).set(as(host.id)).send({ note: "changed" }).expect(200);
       expect(await quiet).toEqual([true, true, true]);
+    });
+
+    it("gives students waiting for approval lobby signals, which carry no data (ACC-06)", async () => {
+      const host = await makeUser(ctx);
+      const student = await makeUser(ctx, { status: "pending" });
+      await ctx.prisma.approvalRequest.create({ data: { userId: student.id } });
+      const socket = await connect({ devUserId: student.id });
+      const lobby = (await create(host.id, { visibility: "private", lobbyCode: "SECRET-3" })).body;
+      await watch(socket, lobby.id);
+      const changed = next(socket, "lobby:changed");
+      await ctx.http().patch(`${API}/lobbies/${lobby.id}`).set(as(host.id)).send({ note: "changed" }).expect(200);
+      const payload = await changed;
+      expect(payload).toEqual({ lobbyId: lobby.id });
+      expect(JSON.stringify(payload)).not.toContain("SECRET");
     });
   });
 });

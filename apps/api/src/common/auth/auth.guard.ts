@@ -74,6 +74,13 @@ export class AuthGuard implements CanActivate {
       case "banned":
         throw new ForbiddenException("This account is banned");
       case "pending":
+        if (allowPending) return;
+        // ACC-06: once their details are in, a student waiting for approval can look around (GET) but not act.
+        if (actor.awaitingApproval) {
+          if (method === "GET") return;
+          throw new ForbiddenException("You can look around, but you can't do this until an admin approves your account");
+        }
+        throw new ForbiddenException("Your account hasn't been approved yet");
       case "rejected":
         if (!allowPending) throw new ForbiddenException("Your account hasn't been approved yet");
         return;
@@ -94,7 +101,7 @@ export class AuthGuard implements CanActivate {
   private async loadActor(userId: string): Promise<Actor | null> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
-      include: { roles: true },
+      include: { roles: true, approvalRequests: { where: { status: "pending" }, select: { id: true }, take: 1 } },
     });
     if (!user) return null;
     return {
@@ -103,6 +110,7 @@ export class AuthGuard implements CanActivate {
       email: user.email,
       status: user.status,
       suspendedUntil: user.suspendedUntil,
+      awaitingApproval: user.status === "pending" && user.approvalRequests.length > 0,
       roles: user.roles.map((r) => r.role),
     };
   }

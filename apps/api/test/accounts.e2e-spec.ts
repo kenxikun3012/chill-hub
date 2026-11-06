@@ -11,20 +11,22 @@ describe("Users, approvals and settings", () => {
   afterAll(() => ctx.app.close());
 
   describe("admin user management", () => {
-    it("creates users only with a college email domain (ACC-02)", async () => {
-      await ctx
-        .http()
-        .post(`${API}/users`)
-        .set(as(admin.id))
-        .send({ name: "Outsider", email: "someone@gmail.com", studentIdNumber: "X-1" })
-        .expect(400);
-      const res = await ctx
-        .http()
-        .post(`${API}/users`)
-        .set(as(admin.id))
-        .send({ name: "Mya Mya", email: `MYA@${DOMAIN}`, studentIdNumber: "CS-2026-001" })
-        .expect(201);
-      expect(res.body).toMatchObject({ email: `mya@${DOMAIN}`, status: "pending", roles: [] });
+    it("creates users: any email unless domains are set (ACC-02), and student IDs look like 22/29484", async () => {
+      const post = (body: object) => ctx.http().post(`${API}/users`).set(as(admin.id)).send(body);
+      const setDomains = (value: string[]) =>
+        ctx.http().put(`${API}/settings/allowed_email_domains`).set(as(admin.id)).send({ value }).expect(200);
+
+      await post({ name: "Old style", email: `old@${DOMAIN}`, studentIdNumber: "CS-2026-001" }).expect(400);
+      await post({ name: "Anyone", email: "someone@gmail.com", studentIdNumber: "22/00009" }).expect(201);
+
+      await setDomains([DOMAIN]);
+      try {
+        await post({ name: "Outsider", email: "other@gmail.com", studentIdNumber: "22/00010" }).expect(400);
+        const res = await post({ name: "Mya Mya", email: `MYA@${DOMAIN}`, studentIdNumber: "22-00001" }).expect(201);
+        expect(res.body).toMatchObject({ email: `mya@${DOMAIN}`, studentIdNumber: "22/00001", status: "pending", roles: [] });
+      } finally {
+        await setDomains([]);
+      }
     });
 
     it("rejects a duplicate student ID number with 409", async () => {
@@ -32,7 +34,7 @@ describe("Users, approvals and settings", () => {
         .http()
         .post(`${API}/users`)
         .set(as(admin.id))
-        .send({ name: "Copy", email: `copy@${DOMAIN}`, studentIdNumber: "CS-2026-001" })
+        .send({ name: "Copy", email: `copy@${DOMAIN}`, studentIdNumber: "22/00001" })
         .expect(409);
       expect(res.body.message).toMatch(/already taken/);
     });
@@ -127,7 +129,7 @@ describe("Users, approvals and settings", () => {
   describe("settings (ADM-06)", () => {
     it("public settings need no login", async () => {
       const res = await ctx.http().get(`${API}/settings/public`).expect(200);
-      expect(res.body).toEqual({ allowed_email_domains: [DOMAIN], max_active_lobbies_per_player: 3 });
+      expect(res.body).toEqual({ allowed_email_domains: [], max_active_lobbies_per_player: 3, signup_join_code_required: false });
     });
 
     it("admins can change a setting; invalid values are refused", async () => {

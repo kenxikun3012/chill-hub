@@ -62,10 +62,10 @@ Better Auth runs inside the API at `/api/v1/auth` (see [ADR 0004](../decisions/0
 
 | Step | Request | Body | Result |
 |---|---|---|---|
-| Sign-up 1 | `POST /auth/sign-up/email` | `name, email, password` | Emails a 6-digit code. College domains only; password 8–128 characters |
+| Sign-up 1 | `POST /auth/sign-up/email` | `studentIdNumber, joinCode?, name, email, password` | Emails a 6-digit code. The student ID must be written like `22/29484` and not be in use. `joinCode` is needed when the club has set one (check `signup_join_code_required` in `GET /settings/public`). Any email works unless admins set `allowed_email_domains`. Password 8–128 characters |
 | Sign-up 2 | `POST /auth/email-otp/verify-email` | `email, otp` | Logged in as pending; returns `token` |
 | Resend code | `POST /auth/email-otp/send-verification-otp` | `email, type: "email-verification"` | Emails a new code |
-| Sign-up 3 | `PUT /me/sign-up-details` | `studentIdNumber, inGameAccount: { gameId, inGameName, rankId?, preferredRoleIds? }` | Saves details and joins the approval queue |
+| Sign-up 3 | `PUT /me/sign-up-details` | `inGameAccount: { gameId, inGameName, rankId?, preferredRoleIds? }`, `studentIdNumber?` (only to correct it after a rejection) | Saves the main game and joins the approval queue |
 | Log in | `POST /auth/sign-in/email` | `email, password` | Returns `token`. 403 if the email isn't verified (a new code is sent) or the account is banned |
 | Log out | `POST /auth/sign-out` | `{}` | Ends this session |
 | Forgot password | `POST /auth/email-otp/request-password-reset` | `email` | Always 200; emails a code if the account exists |
@@ -111,7 +111,8 @@ Applied to every request by the guard (`src/common/auth/dev-auth.guard.ts`):
 | Account status | Can do |
 |---|---|
 | approved | Everything their roles allow |
-| pending / rejected | Only routes marked *pending OK* below: own account, profile, in-game IDs, notifications, approval requests (ACC-06) |
+| pending, details sent (waiting for an admin) | Read (GET) anything, plus the *pending OK* routes below. Lobby codes are always hidden from them. No creating, joining or changing (ACC-06) |
+| pending, details not sent yet / rejected | Only routes marked *pending OK* below: own account, profile, in-game IDs, notifications, approval requests (ACC-06) |
 | suspended | Read (GET) anything; no changes until `suspendedUntil` (MOD-06) |
 | banned / deleted | Nothing |
 
@@ -193,7 +194,7 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 | Method | Path | Who | Purpose |
 |---|---|---|---|
 | GET | `/users`, `/users/:id` | 🛡 | Search users (`?q=`, `status`, `role`) |
-| POST | `/users` | 👑 | Create a user (college email only) |
+| POST | `/users` | 👑 | Create a user (student ID like `22/29484`; email domain checked only if admins set domains) |
 | PATCH | `/users/:id` | 👑 | Name, status, `suspendedUntil` (banning logs them out) |
 | PUT | `/users/:id/roles` | 👑 | Replace roles |
 | DELETE | `/users/:id` | 👑 | Delete account (personal data removed) |
@@ -214,7 +215,9 @@ Legend: 🌐 public (no user needed) · ⏳ pending OK · 🛡 moderator/admin �
 | Closing cancels pending requests, makes chat read-only and asks everyone to rate | LOB-11, REP-01 | `LobbiesService.update` |
 | Ratings: only after the lobby ends, only between players who were in it, not yourself, changeable until `editable_until` (24 h) | REP-01, REP-03 | `RatingsService` |
 | Capacity and limit checks lock the lobby/user row in a transaction, so two players can't take the last slot at once | | `lockLobby()`, `lockUser()` |
-| Only college email domains can be used | ACC-02 | `SettingsService.isEmailDomainAllowed` |
+| Any email can sign up, unless admins set allowed domains | ACC-02 | `SettingsService.isEmailDomainAllowed` |
+| Sign-up needs a valid, unused student ID number and the club's join code (when set); an unverified sign-up releases its ID after the 10-minute code expires | ACC-01, 12, 13 | `AuthService.checkSignUp` |
+| A student waiting for approval can browse but never sees lobby codes | ACC-06, NFR-06 | `canSeeCode()` and the auth guard |
 | Approving adds the `player` role; both decisions notify the student; a reason is required to reject | ACC-04, ACC-05 | `ApprovalsService.decide` |
 | Notifications respect each user's in-app setting per group; account notifications always arrive | NOT-03 | `NotificationsService.notify` |
 
